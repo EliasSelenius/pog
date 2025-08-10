@@ -1,0 +1,447 @@
+
+enum Pog_Tokenkind {
+    EOF;
+    ERROR;
+    Whitespace;
+    NewLine;
+    Word;
+    Keyword_Struct;
+    Keyword_Enum;
+    Keyword_With;
+    Keyword_Namespace;
+    Keyword_Alloc;
+    Keyword_Sizeof;
+    Keyword_Let;
+    Keyword_Include;
+    Keyword_If;
+    Keyword_Else;
+    Keyword_While;
+    Keyword_For;
+    Keyword_Switch;
+    Keyword_Case;
+    Keyword_Default;
+    Keyword_Goto;
+    Keyword_True;
+    Keyword_False;
+    Keyword_And;
+    Keyword_Or;
+    Keyword_Null;
+    Keyword_Continue;
+    Keyword_Break;
+    Keyword_Return;
+    Keyword_Type;
+    Keyword_As;
+    Keyword_Const;
+    Keyword_Static;
+    Integer;
+    Decimal;
+    String;
+    Char;
+    Comment;
+    Multi_Comment_Start;
+    Multi_Comment_End;
+    Comma;
+    Period;
+    Dotdot;
+    Semicolon;
+    Colon;
+    QuestionMark;
+    ExclamationMark;
+    At;
+    Tilde;
+    Ampersand;
+    Pipe;
+    Caret;
+    LeftShift;
+    RightShift;
+    OpenCurl;
+    CloseCurl;
+    OpenParen;
+    CloseParen;
+    OpenSquare;
+    CloseSquare;
+    LessThan;
+    GreaterThan;
+    LessThanOrEqual;
+    GreaterThanOrEqual;
+    Equals;
+    NotEquals;
+    Assign;
+    Plus;
+    Minus;
+    Mul;
+    Div;
+    Mod;
+    PlusPlus;
+    MinusMinus;
+    PlusAssign;
+    MinusAssign;
+    MulAssign;
+    DivAssign;
+    ModAssign;
+    BitAndAssign;
+    BitOrAssign;
+    BitXorAssign;
+}
+
+char* get_str(Pog_Tokenkind kind) switch (kind) {
+    case .EOF: return "EOF";
+    case .ERROR: return "ERROR";
+    case .Whitespace: return "Whitespace";
+    case .NewLine: return "NewLine";
+    case .Word: return "Word";
+    case .Keyword_Struct: return "Keyword_Struct";
+    case .Keyword_Enum: return "Keyword_Enum";
+    case .Keyword_With: return "Keyword_With";
+    case .Keyword_Namespace: return "Keyword_Namespace";
+    case .Keyword_Alloc: return "Keyword_Alloc";
+    case .Keyword_Sizeof: return "Keyword_Sizeof";
+    case .Keyword_Let: return "Keyword_Let";
+    case .Keyword_Include: return "Keyword_Include";
+    case .Keyword_If: return "Keyword_If";
+    case .Keyword_Else: return "Keyword_Else";
+    case .Keyword_While: return "Keyword_While";
+    case .Keyword_For: return "Keyword_For";
+    case .Keyword_Switch: return "Keyword_Switch";
+    case .Keyword_Case: return "Keyword_Case";
+    case .Keyword_Default: return "Keyword_Default";
+    case .Keyword_Goto: return "Keyword_Goto";
+    case .Keyword_True: return "Keyword_True";
+    case .Keyword_False: return "Keyword_False";
+    case .Keyword_And: return "Keyword_And";
+    case .Keyword_Or: return "Keyword_Or";
+    case .Keyword_Null: return "Keyword_Null";
+    case .Keyword_Continue: return "Keyword_Continue";
+    case .Keyword_Break: return "Keyword_Break";
+    case .Keyword_Return: return "Keyword_Return";
+    case .Keyword_Type: return "Keyword_Type";
+    case .Keyword_As: return "Keyword_As";
+    case .Keyword_Const: return "Keyword_Const";
+    case .Keyword_Static: return "Keyword_Static";
+    case .Integer: return "Integer";
+    case .Decimal: return "Decimal";
+    case .String: return "String";
+    case .Char: return "Char";
+    case .Comment: return "Comment";
+    case .Multi_Comment_Start: return "Multi_Comment_Start";
+    case .Multi_Comment_End: return "Multi_Comment_End";
+    case .Comma: return "Comma";
+    case .Period: return "Period";
+    case .Dotdot: return "Dotdot";
+    case .Semicolon: return "Semicolon";
+    case .Colon: return "Colon";
+    case .QuestionMark: return "QuestionMark";
+    case .ExclamationMark: return "ExclamationMark";
+    case .At: return "At";
+    case .Tilde: return "Tilde";
+    case .Ampersand: return "Ampersand";
+    case .Pipe: return "Pipe";
+    case .Caret: return "Caret";
+    case .LeftShift: return "LeftShift";
+    case .RightShift: return "RightShift";
+    case .OpenCurl: return "OpenCurl";
+    case .CloseCurl: return "CloseCurl";
+    case .OpenParen: return "OpenParen";
+    case .CloseParen: return "CloseParen";
+    case .OpenSquare: return "OpenSquare";
+    case .CloseSquare: return "CloseSquare";
+    case .LessThan: return "LessThan";
+    case .GreaterThan: return "GreaterThan";
+    case .LessThanOrEqual: return "LessThanOrEqual";
+    case .GreaterThanOrEqual: return "GreaterThanOrEqual";
+    case .Equals: return "Equals";
+    case .NotEquals: return "NotEquals";
+    case .Assign: return "Assign";
+    case .Plus: return "Plus";
+    case .Minus: return "Minus";
+    case .Mul: return "Mul";
+    case .Div: return "Div";
+    case .Mod: return "Mod";
+    case .PlusPlus: return "PlusPlus";
+    case .MinusMinus: return "MinusMinus";
+    case .PlusAssign: return "PlusAssign";
+    case .MinusAssign: return "MinusAssign";
+    case .MulAssign: return "MulAssign";
+    case .DivAssign: return "DivAssign";
+    case .ModAssign: return "ModAssign";
+    case .BitAndAssign: return "BitAndAssign";
+    case .BitOrAssign: return "BitOrAssign";
+    case .BitXorAssign: return "BitXorAssign";
+}
+
+struct Pog_Token {
+    Pog_Tokenkind kind;
+    uint32 row, col;
+    Pog_TokenData data;
+}
+
+struct Pog_TokenData {
+    string str;
+    uint64 integer;
+    float64 decimal;
+    char character;
+}
+
+Pog_Token pog_next_token(char* cursor) {
+    Pog_Token token = {};
+    token.kind = .ERROR;
+    token.data.str.chars = cursor;
+    token.data.str.length = 1;
+    token.data.character = @cursor;
+
+    Pog_Token pick(Pog_Token tok, char next, char* options, Pog_Tokenkind[] kinds) {
+        tok.kind = kinds[0];
+
+        for 1 .. kinds.length {
+            if next == options[it-1] {
+                tok.kind = kinds[it];
+                tok.data.str.length = 2;
+                return tok;
+            }
+        }
+
+        return tok;
+    }
+
+    if @cursor == 0 { token.kind = .EOF; return token; }
+
+    char next = @(cursor+1);
+
+    switch (@cursor) {
+        case '\n': { token.kind = .NewLine; return token; }
+
+        case ' ': {
+            token.kind = .Whitespace;
+            while @(++cursor) == ' '; // TODO: tabs not handeld
+            token.data.str.length = (cursor - token.data.str.chars) as uint32;
+            return token;
+        }
+
+        case '"': {
+            token.kind = .String;
+            cursor++;
+            while !(@cursor == '"' and @(cursor-1) != '\\') {
+                char ahead = @(cursor+1);
+                if ahead == '\n' or ahead == 0 break;
+                cursor++;
+            }
+            cursor++;
+            token.data.str.length = (cursor - token.data.str.chars) as uint32;
+            return token;
+        }
+
+        case '\'': {
+            token.kind = .Char;
+            cursor++;
+            char ch = @cursor;
+
+            if ch == '\\' {
+                cursor++;
+                switch (@cursor) {
+                    case 'n':  ch = '\n'; break;
+                    case 't':  ch = '\t'; break;
+                    case '\\': ch = '\\'; break;
+                    case '\'': ch = '\''; break;
+                }
+            }
+            cursor++;
+
+            if @cursor == '\'' {
+                cursor++;
+            } else {
+                // TODO: unterminated char literal error message
+            }
+
+            token.data.character = ch;
+            token.data.str.length = (cursor - token.data.str.chars) as uint32;
+            return token;
+        }
+
+        case '/': {
+            switch (next) {
+                case '/': {
+                    token.kind = .Comment;
+                    while @cursor != '\n' and @cursor != 0   cursor++;
+                    token.data.str.length = (cursor - token.data.str.chars) as uint32;
+                    return token;
+                }
+                case '*': { token.kind = .Multi_Comment_Start; token.data.str.length = 2; return token; }
+                case '=': { token.kind = .DivAssign; token.data.str.length = 2; return token; }
+            }
+
+            token.kind = .Div;
+            return token;
+        }
+
+        // case '/': return pick(token, next, "=/*", { .Div,         .DivAssign, .Comment, .Multi_Comment_Start } as Pog_Tokenkind[]);
+
+        case '*': return pick(token, next, "=/", { .Mul,         .MulAssign,  .Multi_Comment_End  } as Pog_Tokenkind[]);
+        case '<': return pick(token, next, "<=", { .LessThan,    .LeftShift,  .LessThanOrEqual    } as Pog_Tokenkind[]);
+        case '>': return pick(token, next, ">=", { .GreaterThan, .RightShift, .GreaterThanOrEqual } as Pog_Tokenkind[]);
+        case '+': return pick(token, next, "+=", { .Plus,        .PlusPlus,   .PlusAssign         } as Pog_Tokenkind[]);
+        case '-': return pick(token, next, "-=", { .Minus,       .MinusMinus, .MinusAssign        } as Pog_Tokenkind[]);
+
+
+        case '=': return pick(token, next, "=", { .Assign,          .Equals       } as Pog_Tokenkind[]);
+        case '!': return pick(token, next, "=", { .ExclamationMark, .NotEquals    } as Pog_Tokenkind[]);
+        case '%': return pick(token, next, "=", { .Mod,             .ModAssign    } as Pog_Tokenkind[]);
+        case '.': return pick(token, next, ".", { .Period,          .Dotdot       } as Pog_Tokenkind[]);
+        case '&': return pick(token, next, "=", { .Ampersand,       .BitAndAssign } as Pog_Tokenkind[]);
+        case '|': return pick(token, next, "=", { .Pipe,            .BitOrAssign  } as Pog_Tokenkind[]);
+        case '^': return pick(token, next, "=", { .Caret,           .BitXorAssign } as Pog_Tokenkind[]);
+
+        case ',': { token.kind = .Comma; return token; }
+        case ';': { token.kind = .Semicolon; return token; }
+        case ':': { token.kind = .Colon; return token; }
+        case '?': { token.kind = .QuestionMark; return token; }
+        case '@': { token.kind = .At; return token; }
+        case '~': { token.kind = .Tilde; return token; }
+
+        case '{': { token.kind = .OpenCurl; return token; }
+        case '}': { token.kind = .CloseCurl; return token; }
+        case '(': { token.kind = .OpenParen; return token; }
+        case ')': { token.kind = .CloseParen; return token; }
+        case '[': { token.kind = .OpenSquare; return token; }
+        case ']': { token.kind = .CloseSquare; return token; }
+    }
+
+    if is_letter(@cursor) or @cursor == '_' {
+        token.kind = .Word;
+        while is_alphanumeric(@cursor) or @cursor == '_'  cursor++;
+        token.data.str.length = (cursor - token.data.str.chars) as uint32;
+
+        if string_equals(token.data.str, "enum")      token.kind = .Keyword_Enum;
+        if string_equals(token.data.str, "struct")    token.kind = .Keyword_Struct;
+        if string_equals(token.data.str, "let")       token.kind = .Keyword_Let;
+        if string_equals(token.data.str, "alloc")     token.kind = .Keyword_Alloc;
+        if string_equals(token.data.str, "if")        token.kind = .Keyword_If;
+        if string_equals(token.data.str, "include")   token.kind = .Keyword_Include;
+        if string_equals(token.data.str, "while")     token.kind = .Keyword_While;
+        if string_equals(token.data.str, "else")      token.kind = .Keyword_Else;
+        if string_equals(token.data.str, "false")     token.kind = .Keyword_False;
+        if string_equals(token.data.str, "true")      token.kind = .Keyword_True;
+        if string_equals(token.data.str, "or")        token.kind = .Keyword_Or;
+        if string_equals(token.data.str, "and")       token.kind = .Keyword_And;
+        if string_equals(token.data.str, "continue")  token.kind = .Keyword_Continue;
+        if string_equals(token.data.str, "null")      token.kind = .Keyword_Null;
+        if string_equals(token.data.str, "return")    token.kind = .Keyword_Return;
+        if string_equals(token.data.str, "break")     token.kind = .Keyword_Break;
+        if string_equals(token.data.str, "as")        token.kind = .Keyword_As;
+        if string_equals(token.data.str, "type")      token.kind = .Keyword_Type;
+        if string_equals(token.data.str, "for")       token.kind = .Keyword_For;
+        if string_equals(token.data.str, "const")     token.kind = .Keyword_Const;
+        if string_equals(token.data.str, "default")   token.kind = .Keyword_Default;
+        if string_equals(token.data.str, "switch")    token.kind = .Keyword_Switch;
+        if string_equals(token.data.str, "goto")      token.kind = .Keyword_Goto;
+        if string_equals(token.data.str, "case")      token.kind = .Keyword_Case;
+        if string_equals(token.data.str, "namespace") token.kind = .Keyword_Namespace;
+        if string_equals(token.data.str, "with")      token.kind = .Keyword_With;
+        if string_equals(token.data.str, "static")    token.kind = .Keyword_Static;
+        if string_equals(token.data.str, "sizeof")    token.kind = .Keyword_Sizeof;
+
+        return token;
+    }
+
+    if @cursor == '0' and next == 'x' {
+        cursor+=2;
+        token.kind = .Integer;
+        while is_hexdigit(@cursor) or @cursor == '_' cursor++;
+        token.data.str.length = (cursor - token.data.str.chars) as uint32;
+        token.data.integer = parse_hex(token.data.str);
+        return token;
+    }
+
+    if is_digit(@cursor) {
+        token.kind = .Integer;
+        while is_digit(@cursor) or @cursor == '_'  cursor++;
+        token.data.str.length = (cursor - token.data.str.chars) as uint32;
+
+        uint64 int_part = parse_int(token.data.str);
+        token.data.integer = int_part;
+
+        if @cursor == '.' {
+            token.kind = .Decimal;
+            cursor++;
+            string s = { cursor, 0 };
+            while is_digit(@cursor) or @cursor == '_'  cursor++;
+            s.length = (cursor - s.chars) as uint32;
+
+            uint64 num_digits = 0;
+            for 0 .. s.length  if is_digit(s.chars[it]) num_digits++;
+            float64 denom = pow_uint64(10, num_digits) as float64;
+
+            float64 frac_part = parse_int(s) as float64;
+            token.data.decimal = int_part as float64 + (frac_part / denom);
+        }
+
+        token.data.str.length = (cursor - token.data.str.chars) as uint32;
+        return token;
+    }
+
+    return token;
+}
+
+Pog_Token[..] lex(char* file_buffer) {
+    Pog_Token[..] tokens = list_create(sizeof Pog_Token);
+
+    char* cursor = file_buffer;
+    uint32 row = 0;
+    uint32 col = 0;
+    bool comment = false;
+
+    lex_loop: {
+        Pog_Token tok = pog_next_token(cursor);
+        tok.row = row;
+        tok.col = col;
+
+        col += tok.data.str.length;
+
+        switch (tok.kind) {
+            default: if !comment  list_add(*tokens, *tok); break;
+            case .EOF: break;
+            // case .ERROR: print("ERROR: ", get_str(tok.kind), " (", tok.data.character, ") (\"", tok.data.str, "\")\n"); break;
+            case .Whitespace: break;
+            case .NewLine: row++; col = 0; break;
+
+            // TODO: we might include comments
+            case .Comment: break;
+            case .Multi_Comment_Start: comment = true; break;
+            case .Multi_Comment_End: comment = false; break;
+        }
+
+        cursor += tok.data.str.length;
+        if tok.kind != Pog_Tokenkind.EOF goto lex_loop;
+    }
+
+    return tokens;
+}
+
+// struct Pog_Lexer {
+//     Pog_Token[..] tokens;
+//     uint32 row;
+//     uint32 col;
+// }
+
+
+void print_tokens(Pog_Token[..] tokens) {
+    print("\n\n\n");
+
+    for 0 .. list_length(tokens) {
+        Pog_Token token = tokens[it];
+        print(it, " ", get_str(token.kind), " (", token.data.character, ") (\"", token.data.str, "\") int=", token.data.integer, " decimal=", token.data.decimal, "\n");
+    }
+}
+
+////////////////////////////////////
+// Architecture
+
+// struct Node {}
+// struct Token {}
+// struct Error {}
+// struct EvalResult {}
+
+// Token next_token();
+// Node* node_parse();
+// bool node_validate(Node* node, Error[..] errors); // returns false on error
+// string node_transpile_c(Node* node);
+// EvalResult node_eval(Node* node);

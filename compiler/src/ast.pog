@@ -1,0 +1,892 @@
+
+/*
+    procptr args (hmmm?)
+    for loops
+
+    opaque types
+    multi-line comments
+    multi declare
+    ternary
+    assignemnts
+    enums
+*/
+
+enum Pog_Nodekind {
+    ERROR;
+    Expr_Plus;
+    Expr_Minus;
+    Expr_Mul;
+    Expr_Div;
+    Expr_Mod;
+
+    Expr_Range;
+
+    Expr_Less;
+    Expr_Greater;
+    Expr_LessEquals;
+    Expr_GreaterEquals;
+    Expr_Equals;
+    Expr_NotEquals;
+
+    Expr_And;
+    Expr_Or;
+
+    Expr_Bit_And;
+    Expr_Bit_Or;
+    Expr_Bit_Xor;
+    Expr_Bit_Lshift;
+    Expr_Bit_Rshift;
+
+    Expr_PreIncrement;
+    Expr_PostIncrement;
+    Expr_PreDecrement;
+    Expr_PostDecrement;
+
+    Expr_Not;
+    Expr_Bit_Not;
+    Expr_AddressOf;
+    Expr_ValueOf;
+    Expr_Negate;
+
+    Expr_Integer;
+    Expr_Decimal;
+    Expr_Char;
+    Expr_String;
+    Expr_True;
+    Expr_False;
+    Expr_Null;
+
+    Expr_Variable;
+    Expr_Alloc;
+    Expr_Ternary;
+    Expr_ProcCall;
+    Expr_Deref;
+    Expr_Indexing;
+    Expr_Cast;
+    Expr_Sizeof;
+    Expr_Parenthesized;
+    Expr_Compound;
+
+    Stmt_Declaration;
+    Stmt_Constant;
+    Stmt_Typedef;
+    Stmt_Procedure;
+    Stmt_Argument;
+    Stmt_Struct;
+    Stmt_Enum;
+    Stmt_EnumEntry;
+    Stmt_Assignment;
+    Stmt_Scope;
+    Stmt_If;
+    Stmt_While;
+    Stmt_For;
+    Stmt_Switch;
+    Stmt_Continue;
+    Stmt_Break;
+    Stmt_Return;
+    Stmt_Goto;
+    Stmt_Label;
+    Stmt_Case;
+    Stmt_Default;
+    Stmt_Include;
+
+    Type_MustInfer;
+    Type_Basic;
+    Type_Procedure;
+    Type_Array;
+    Type_Fixed_Array;
+    Type_Dynamic_Array;
+
+}
+
+char* get_str(Pog_Nodekind kind) switch (kind) {
+    case .ERROR: return "ERROR";
+    case .Expr_Plus: return "Expr_Plus";
+    case .Expr_Minus: return "Expr_Minus";
+    case .Expr_Mul: return "Expr_Mul";
+    case .Expr_Div: return "Expr_Div";
+    case .Expr_Mod: return "Expr_Mod";
+    case .Expr_Range: return "Expr_Range";
+    case .Expr_Less: return "Expr_Less";
+    case .Expr_Greater: return "Expr_Greater";
+    case .Expr_LessEquals: return "Expr_LessEquals";
+    case .Expr_GreaterEquals: return "Expr_GreaterEquals";
+    case .Expr_Equals: return "Expr_Equals";
+    case .Expr_NotEquals: return "Expr_NotEquals";
+    case .Expr_And: return "Expr_And";
+    case .Expr_Or: return "Expr_Or";
+    case .Expr_Bit_And: return "Expr_Bit_And";
+    case .Expr_Bit_Or: return "Expr_Bit_Or";
+    case .Expr_Bit_Xor: return "Expr_Bit_Xor";
+    case .Expr_Bit_Lshift: return "Expr_Bit_Lshift";
+    case .Expr_Bit_Rshift: return "Expr_Bit_Rshift";
+    case .Expr_PreIncrement: return "Expr_PreIncrement";
+    case .Expr_PostIncrement: return "Expr_PostIncrement";
+    case .Expr_PreDecrement: return "Expr_PreDecrement";
+    case .Expr_PostDecrement: return "Expr_PostDecrement";
+    case .Expr_Not: return "Expr_Not";
+    case .Expr_Bit_Not: return "Expr_Bit_Not";
+    case .Expr_AddressOf: return "Expr_AddressOf";
+    case .Expr_ValueOf: return "Expr_ValueOf";
+    case .Expr_Negate: return "Expr_Negate";
+    case .Expr_Integer: return "Expr_Integer";
+    case .Expr_Decimal: return "Expr_Decimal";
+    case .Expr_Char: return "Expr_Char";
+    case .Expr_String: return "Expr_String";
+    case .Expr_True: return "Expr_True";
+    case .Expr_False: return "Expr_False";
+    case .Expr_Null: return "Expr_Null";
+    case .Expr_Variable: return "Expr_Variable";
+    case .Expr_Alloc: return "Expr_Alloc";
+    case .Expr_Ternary: return "Expr_Ternary";
+    case .Expr_ProcCall: return "Expr_ProcCall";
+    case .Expr_Deref: return "Expr_Deref";
+    case .Expr_Indexing: return "Expr_Indexing";
+    case .Expr_Cast: return "Expr_Cast";
+    case .Expr_Sizeof: return "Expr_Sizeof";
+    case .Expr_Parenthesized: return "Expr_Parenthesized";
+    case .Expr_Compound: return "Expr_Compound";
+    case .Stmt_Declaration: return "Stmt_Declaration";
+    case .Stmt_Constant: return "Stmt_Constant";
+    case .Stmt_Typedef: return "Stmt_Typedef";
+    case .Stmt_Procedure: return "Stmt_Procedure";
+    case .Stmt_Argument: return "Stmt_Argument";
+    case .Stmt_Struct: return "Stmt_Struct";
+    case .Stmt_Enum: return "Stmt_Enum";
+    case .Stmt_EnumEntry: return "Stmt_EnumEntry";
+    case .Stmt_Assignment: return "Stmt_Assignment";
+    case .Stmt_Scope: return "Stmt_Scope";
+    case .Stmt_If: return "Stmt_If";
+    case .Stmt_While: return "Stmt_While";
+    case .Stmt_For: return "Stmt_For";
+    case .Stmt_Switch: return "Stmt_Switch";
+    case .Stmt_Continue: return "Stmt_Continue";
+    case .Stmt_Break: return "Stmt_Break";
+    case .Stmt_Return: return "Stmt_Return";
+    case .Stmt_Goto: return "Stmt_Goto";
+    case .Stmt_Label: return "Stmt_Label";
+    case .Stmt_Case: return "Stmt_Case";
+    case .Stmt_Default: return "Stmt_Default";
+    case .Stmt_Include: return "Stmt_Include";
+    case .Type_MustInfer: return "Type_MustInfer";
+    case .Type_Basic: return "Type_Basic";
+    case .Type_Procedure: return "Type_Procedure";
+    case .Type_Array: return "Type_Array";
+    case .Type_Fixed_Array: return "Type_Fixed_Array";
+    case .Type_Dynamic_Array: return "Type_Dynamic_Array";
+}
+
+// 1857loc for parser_*.c + syntax_tree.c files
+
+/* idea: this syntax tree could be a flat array of nodes
+    we would remove sub_nodes: good because its a memory leak
+    remove node1, node2 etc... good because node struct is smaller
+        tree structure would be encoded using a uint32 sub_node_count; field
+        where the number of subsequent nodes in the list are child nodes
+
+    this would mean we would have to rearrange nodes during parsing for example:
+        foo.bar
+    here the inner expression (foo) appears before the deref expression (.bar)
+    since the inner expr is parsed first.
+    but in our node list we want the deref to appear first
+    so we have to swap them wich is easy enough, but if the inner expr has sub nodes its more complicated:
+        (pos + vel).x
+    essentially we must be able to do a insert()
+
+*/
+
+struct Pog_Node {
+    Pog_Nodekind kind;
+    uint32 ptr_degree;
+
+    Pog_Token token; // the first token
+    Pog_Token name; // the token of the name of this node, like the name of a struct or the label of a goto
+
+    Pog_Node* enclosing_scope;
+
+    // while (node1) node2
+    // if node1 then node2 else node3
+    // for (node1, node2, node3) node4
+    // for (node1 : node2 .. node3) node4
+    // switch node1 node2
+    Pog_Node* node1, node2, node3, node4;
+
+    Pog_Node*[..] sub_nodes;
+}
+
+struct Pog_Parser {
+    Pog_Token[..] tokens;
+    uint32 token_index;
+
+    Pog_Unit* unit;
+    Arena* arena;
+}
+
+struct Pog_Unit {
+    Arena* arena;
+    Pog_Node*[..] top_level_nodes;
+    Pog_Error[..] errors;
+}
+
+struct Pog_Error {
+    Pog_Token token;
+    string message;
+}
+
+Pog_Token peek(Pog_Parser* pp) return peek(pp, 0);
+Pog_Token peek(Pog_Parser* pp, int32 offset) {
+    int32 index = pp.token_index + offset;
+    if list_length(pp.tokens) <= index {
+        Pog_Token eof = {};
+        eof.kind = .EOF;
+        return eof;
+    }
+
+    let tok = pp.tokens[index];
+    return tok;
+}
+
+bool token(Pog_Parser* pp, Pog_Tokenkind kind) {
+    if list_length(pp.tokens) <= pp.token_index return false;
+
+    if pp.tokens[pp.token_index].kind != kind return false;
+    pp.token_index++;
+    return true;
+}
+
+bool token_until(Pog_Parser* pp, Pog_Tokenkind kind) {
+    if peek(pp).kind == Pog_Tokenkind.EOF return false;
+    if token(pp, kind) return false;
+    return true;
+}
+
+bool token(Pog_Parser* pp, Pog_Tokenkind[] kinds) {
+    for 0 .. kinds.length if token(pp, kinds[it]) return true;
+    return false;
+}
+
+Pog_Token assert_token(Pog_Parser* pp, Pog_Tokenkind kind) {
+    let tok = peek(pp);
+    if token(pp, kind) {
+        return tok;
+    }
+
+    // TODO: error reporting
+    // make_string(concat(concat("Expected ", get_str(kind), " got "), get_str(tok.kind)));
+    return tok;
+}
+
+void assert_semicolon(Pog_Parser* pp) assert_token(pp, Pog_Tokenkind.Semicolon);
+
+Pog_Unit* parse(char* file_buffer) {
+    Pog_Parser pp = {};
+    pp.tokens = lex(file_buffer);
+
+    pp.arena = arena_create();
+    pp.unit = arena_alloc(pp.arena, sizeof Pog_Unit);
+    pp.unit.arena = pp.arena;
+    pp.unit.top_level_nodes = list_create(sizeof Pog_Node*);
+    pp.unit.errors = list_create(sizeof Pog_Error);
+
+    uint32 len = list_length(pp.tokens);
+    while pp.token_index < len {
+        let node = parse_stmt(*pp);
+        list_add(*pp.unit.top_level_nodes, *node);
+    }
+
+    list_delete(pp.tokens);
+
+    return pp.unit;
+}
+
+Pog_Node* new_node(Pog_Parser* pp, Pog_Nodekind kind) {
+    Pog_Node* node = arena_alloc(pp.arena, sizeof Pog_Node);
+    @node = {};
+    node.kind = kind;
+    node.token = peek(pp);
+    pp.token_index++;
+    return node;
+}
+
+Pog_Node* parse_stmt(Pog_Parser* pp) {
+    switch (peek(pp).kind) {
+        case .OpenCurl: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Scope);
+            node.sub_nodes = list_create(sizeof Pog_Node*);
+
+            while true {
+                if peek(pp).kind == Pog_Tokenkind.EOF break;
+                if token(pp, Pog_Tokenkind.CloseCurl) break;
+
+                let sub = parse_stmt(pp);
+                list_add(*node.sub_nodes, *sub);
+            }
+
+            return node;
+        }
+
+        case .Keyword_While: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_While);
+            node.node1 = parse_expr(pp);
+            if !token(pp, Pog_Tokenkind.Semicolon) node.node2 = parse_stmt(pp);
+            return node;
+        }
+        case .Keyword_If: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_If);
+            node.node1 = parse_expr(pp);
+            if !token(pp, Pog_Tokenkind.Semicolon) node.node2 = parse_stmt(pp);
+            if token(pp, Pog_Tokenkind.Keyword_Else) node.node3 = parse_stmt(pp);
+            return node;
+        }
+
+        case .Keyword_For: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_For);
+            bool close = token(pp, Pog_Tokenkind.OpenParen);
+
+            node.node1 = parse_stmt(pp);
+
+            if node.node1.kind == Pog_Nodekind.Stmt_Label {
+
+                node.node2 = parse_expr(pp);
+            } else {
+                if token(pp, Pog_Tokenkind.Comma) {
+                    node.node2 = parse_expr(pp);
+                    assert_token(pp, Pog_Tokenkind.Comma);
+                    node.node3 = parse_stmt(pp);
+                } else if token(pp, Pog_Tokenkind.Colon) {
+                    node.node2 = parse_expr(pp);
+                }
+            }
+
+
+            if close assert_token(pp, Pog_Tokenkind.CloseParen);
+            if !token(pp, Pog_Tokenkind.Semicolon) node.node4 = parse_stmt(pp);
+            return node;
+        }
+
+        case .Keyword_Switch:   { let node = new_node(pp, Pog_Nodekind.Stmt_Switch); node.node1 = parse_expr(pp); node.node2 = parse_stmt(pp); return node; }
+        case .Keyword_Case:     { let node = new_node(pp, Pog_Nodekind.Stmt_Case); node.node1 = parse_expr(pp); assert_token(pp, Pog_Tokenkind.Colon); return node; }
+        case .Keyword_Default:  { let node = new_node(pp, Pog_Nodekind.Stmt_Default); assert_token(pp, Pog_Tokenkind.Colon); return node; }
+        case .Keyword_Continue: { let node = new_node(pp, Pog_Nodekind.Stmt_Continue);  assert_semicolon(pp); return node; }
+        case .Keyword_Break:    { let node = new_node(pp, Pog_Nodekind.Stmt_Break);  assert_semicolon(pp); return node; }
+        case .Keyword_Return:   { let node = new_node(pp, Pog_Nodekind.Stmt_Return); if peek(pp).kind == Pog_Tokenkind.Semicolon pp.token_index++; else {node.node1 = parse_expr(pp); assert_semicolon(pp);} return node; }
+        case .Keyword_Goto:     { let node = new_node(pp, Pog_Nodekind.Stmt_Goto); node.name = assert_token(pp, Pog_Tokenkind.Word); assert_semicolon(pp); return node; }
+
+        case .Keyword_Struct: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Struct);
+            node.name = assert_token(pp, Pog_Tokenkind.Word);
+            node.sub_nodes = list_create(sizeof Pog_Node*);
+
+            assert_token(pp, Pog_Tokenkind.OpenCurl);
+            while token_until(pp, Pog_Tokenkind.CloseCurl) {
+                let sub = parse_stmt(pp);
+                list_add(*node.sub_nodes, *sub);
+            }
+
+            return node;
+        }
+
+        case .Keyword_Enum: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Enum);
+            node.name = assert_token(pp, Pog_Tokenkind.Word);
+            node.sub_nodes = list_create(sizeof Pog_Node*);
+
+            assert_token(pp, Pog_Tokenkind.OpenCurl);
+            while token_until(pp, Pog_Tokenkind.CloseCurl) {
+                let entry = new_node(pp, Pog_Nodekind.Stmt_EnumEntry);
+                if token(pp, Pog_Tokenkind.Assign) entry.node1 = parse_expr(pp);
+                assert_semicolon(pp);
+                list_add(*node.sub_nodes, *entry);
+            }
+
+            return node;
+        }
+
+        case .Keyword_Type: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Typedef);
+            node.name = assert_token(pp, Pog_Tokenkind.Word);
+            if token(pp, Pog_Tokenkind.Assign) node.node1 = parse_type(pp);
+            assert_semicolon(pp);
+            return node;
+        }
+
+        case .Keyword_Const: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Constant);
+            node.name = assert_token(pp, Pog_Tokenkind.Word);
+            assert_token(pp, Pog_Tokenkind.Assign);
+            node.node1 = parse_expr(pp);
+            assert_semicolon(pp);
+            return node;
+        }
+
+        Pog_Node* decl(Pog_Parser* pp, Pog_Node* node) {
+            if token(pp, Pog_Tokenkind.Assign) node.node2 = parse_expr(pp);
+
+            while token(pp, Pog_Tokenkind.Comma) {
+                if !node.sub_nodes  node.sub_nodes = list_create(sizeof Pog_Node*);
+
+                let next = new_node(pp, Pog_Nodekind.Stmt_Declaration);
+                next.node1 = node.node1;
+                if token(pp, Pog_Tokenkind.Assign) next.node2 = parse_expr(pp);
+                list_add(*node.sub_nodes, *next);
+            }
+
+            assert_semicolon(pp);
+            return node;
+        }
+
+        case .Keyword_Static: {
+            let node = new_node(pp, Pog_Nodekind.Stmt_Declaration);
+            node.node1 = parse_type(pp);
+            node.name = assert_token(pp, Pog_Tokenkind.Word);
+            return decl(pp, node);
+        }
+
+        case .Keyword_Include: { let node = new_node(pp, Pog_Nodekind.Stmt_Include); node.name = assert_token(pp, Pog_Tokenkind.String); assert_semicolon(pp); return node; }
+
+        case .Keyword_Let:
+        case .Word: {
+            if peek(pp, 1).kind == Pog_Tokenkind.Colon {
+                let node = new_node(pp, Pog_Nodekind.Stmt_Label);
+                pp.token_index++;
+                return node;
+            }
+
+            uint32 post_type = peek_type(pp);
+            if post_type and pp.tokens[post_type].kind == Pog_Tokenkind.Word {
+                let node = new_node(pp, Pog_Nodekind.Stmt_Declaration);
+                pp.token_index--;
+                node.node1 = parse_type(pp);
+                node.name = assert_token(pp, Pog_Tokenkind.Word);
+
+                if !token(pp, Pog_Tokenkind.OpenParen) {
+                    node = decl(pp, node);
+                } else {
+                    node.kind = .Stmt_Procedure;
+
+                    if !token(pp, Pog_Tokenkind.CloseParen) {
+                        node.sub_nodes = list_create(sizeof Pog_Node*);
+                        Pog_Node* prev_arg = null;
+                        arg_loop: {
+                            let arg = new_node(pp, Pog_Nodekind.Stmt_Argument);
+                            pp.token_index--;
+
+                            let t = peek(pp, 1).kind;
+                            if prev_arg and (t == Pog_Tokenkind.Comma or t == Pog_Tokenkind.CloseParen) {
+                                arg.node1 = prev_arg.node1;
+                            } else {
+                                arg.node1 = parse_type(pp);
+                            }
+
+                            arg.name = assert_token(pp, Pog_Tokenkind.Word);
+
+                            prev_arg = arg;
+                            list_add(*node.sub_nodes, *arg);
+                            if token(pp, Pog_Tokenkind.Comma) goto arg_loop;
+                        }
+
+                        assert_token(pp, Pog_Tokenkind.CloseParen);
+                    }
+
+                    if token(pp, Pog_Tokenkind.Keyword_As) {
+                        pp.token_index++;
+                    }
+
+                    if token(pp, Pog_Tokenkind.Semicolon) return node;
+                    node.node2 = parse_stmt(pp);
+                }
+
+                return node;
+            }
+
+            break;
+        }
+
+        case .ERROR: {
+            let node = new_node(pp, Pog_Nodekind.ERROR);
+            node.name.data.str = make_string("unrecognised token");
+            return node;
+        }
+
+        default: break;
+    }
+
+    let expr = parse_expr(pp);
+    if expr.kind == Pog_Nodekind.ERROR return expr;
+
+    Pog_Tokenkind[] ass_kinds = {
+        .Assign,
+        .PlusAssign,
+        .MinusAssign,
+        .MulAssign,
+        .DivAssign,
+        .ModAssign,
+        .BitAndAssign,
+        .BitOrAssign,
+        .BitXorAssign
+    };
+
+    if token(pp, ass_kinds) {
+        pp.token_index--;
+        let ass = new_node(pp, Pog_Nodekind.Stmt_Assignment);
+        ass.node1 = expr;
+        ass.node2 = parse_expr(pp);
+        expr = ass;
+    }
+
+    assert_semicolon(pp);
+    return expr;
+}
+
+uint32 peek_type(Pog_Parser* pp) {
+    Pog_Parser fake = {};
+    fake.tokens = pp.tokens;
+    fake.token_index = pp.token_index;
+    fake.arena = arena_create();
+
+    uint32 res = 0;
+    let fake_type_node = parse_type(*fake);
+    if fake_type_node.kind != Pog_Nodekind.ERROR {
+        res = fake.token_index;
+    }
+
+    // TODO: does not release lists
+    arena_release(fake.arena);
+
+    return res;
+}
+
+Pog_Node* parse_type(Pog_Parser* pp) {
+    Pog_Node* node = arena_alloc(pp.arena, sizeof Pog_Node);
+    @node = {};
+    node.kind = .ERROR;
+    node.token = peek(pp);
+    pp.token_index++;
+
+    if node.token.kind == Pog_Tokenkind.Keyword_Let {
+        node.kind = .Type_MustInfer;
+        return node;
+    }
+
+    if node.token.kind != Pog_Tokenkind.Word return node;
+
+    node.kind = .Type_Basic;
+    while token(pp, Pog_Tokenkind.Mul) node.ptr_degree++;
+
+    while true {
+        if token(pp, Pog_Tokenkind.OpenSquare) {
+            Pog_Node* array_node = arena_alloc(pp.arena, sizeof Pog_Node);
+            @array_node = {};
+            array_node.kind = .ERROR;
+            array_node.token = peek(pp);
+            array_node.node1 = node;
+
+            if token(pp, Pog_Tokenkind.Dotdot) {
+                array_node.kind = .Type_Dynamic_Array;
+                assert_token(pp, Pog_Tokenkind.CloseSquare);
+            } else if token(pp, Pog_Tokenkind.CloseSquare) {
+                array_node.kind = .Type_Array;
+            } else {
+                array_node.kind = .Type_Fixed_Array;
+                array_node.node2 = parse_expr(pp);
+                assert_token(pp, Pog_Tokenkind.CloseSquare);
+            }
+
+            node = array_node;
+        } else if token(pp, Pog_Tokenkind.OpenParen) {
+            Pog_Node* proc_node = arena_alloc(pp.arena, sizeof Pog_Node);
+            @proc_node = {};
+            proc_node.kind = .Type_Procedure;
+            proc_node.token = peek(pp);
+            proc_node.node1 = node;
+            proc_node.sub_nodes = list_create(sizeof Pog_Node*);
+
+            if !token(pp, Pog_Tokenkind.CloseParen) {
+                arg_loop: {
+                    let arg = parse_type(pp);
+                    if peek(pp).kind == Pog_Tokenkind.Word   arg.name = assert_token(pp, Pog_Tokenkind.Word);
+                    list_add(*proc_node.sub_nodes, *arg);
+
+                    if token(pp, Pog_Tokenkind.Comma) goto arg_loop;
+                }
+
+                assert_token(pp, Pog_Tokenkind.CloseParen);
+            }
+
+            node = proc_node;
+        } else {
+            break;
+        }
+
+        while token(pp, Pog_Tokenkind.Mul) node.ptr_degree++;
+    }
+
+    return node;
+}
+
+Pog_Node* parse_expr(Pog_Parser* pp) {
+    let node = parse_expr_binary(pp);
+
+    if peek(pp).kind == Pog_Tokenkind.QuestionMark {
+        let ter = new_node(pp, Pog_Nodekind.Expr_Ternary);
+        ter.node1 = node;
+        ter.node2 = parse_expr(pp);
+        assert_token(pp, Pog_Tokenkind.Colon);
+        ter.node3 = parse_expr(pp);
+        node = ter;
+    }
+
+    return node;
+}
+
+Pog_Node* parse_expr_binary(Pog_Parser* pp) {
+    return parse_expr_bin(pp, 0);
+}
+
+struct Pog_Binary_Op {
+    Pog_Tokenkind token_kind;
+    Pog_Nodekind node_kind;
+}
+
+Pog_Binary_Op[][] pog_all_ops = {
+    {
+        {Pog_Tokenkind.Keyword_And, Pog_Nodekind.Expr_And},
+        {Pog_Tokenkind.Keyword_Or,  Pog_Nodekind.Expr_Or}
+    },
+    {
+        {Pog_Tokenkind.LessThan,           Pog_Nodekind.Expr_Less},
+        {Pog_Tokenkind.GreaterThan,        Pog_Nodekind.Expr_Greater},
+        {Pog_Tokenkind.LessThanOrEqual,    Pog_Nodekind.Expr_LessEquals},
+        {Pog_Tokenkind.GreaterThanOrEqual, Pog_Nodekind.Expr_GreaterEquals},
+        {Pog_Tokenkind.Equals,             Pog_Nodekind.Expr_Equals},
+        {Pog_Tokenkind.NotEquals,          Pog_Nodekind.Expr_NotEquals}
+    },
+    {
+        {Pog_Tokenkind.Dotdot, Pog_Nodekind.Expr_Range}
+    },
+    {
+        {Pog_Tokenkind.Ampersand,  Pog_Nodekind.Expr_Bit_And},
+        {Pog_Tokenkind.Pipe,       Pog_Nodekind.Expr_Bit_Or},
+        {Pog_Tokenkind.Caret,      Pog_Nodekind.Expr_Bit_Xor},
+        {Pog_Tokenkind.LeftShift,  Pog_Nodekind.Expr_Bit_Lshift},
+        {Pog_Tokenkind.RightShift, Pog_Nodekind.Expr_Bit_Rshift}
+    },
+    {
+        {Pog_Tokenkind.Plus,    Pog_Nodekind.Expr_Plus},
+        {Pog_Tokenkind.Minus,   Pog_Nodekind.Expr_Minus}
+    },
+    {
+        {Pog_Tokenkind.Mul,     Pog_Nodekind.Expr_Mul},
+        {Pog_Tokenkind.Div,     Pog_Nodekind.Expr_Div},
+        {Pog_Tokenkind.Mod,     Pog_Nodekind.Expr_Mod}
+    }
+};
+
+Pog_Nodekind test_op_group(Pog_Parser* pp, uint32 op_index) {
+    let ops = pog_all_ops[op_index];
+    let tok = peek(pp).kind;
+    for 0 .. ops.length {
+        if ops[it].token_kind == tok return ops[it].node_kind;
+    }
+
+    return .ERROR;
+}
+
+
+Pog_Node* parse_expr_bin(Pog_Parser* pp, uint32 op_index) {
+    if op_index >= pog_all_ops.length return parse_expr_unary(pp);
+
+    let node = parse_expr_bin(pp, op_index+1);
+    while true {
+        let node_kind = test_op_group(pp, op_index);
+        if node_kind == Pog_Nodekind.ERROR  break;
+
+        let bin = new_node(pp, node_kind);
+        bin.node1 = node;
+        bin.node2 = parse_expr_bin(pp, op_index+1);
+        node = bin;
+    }
+
+    return node;
+}
+
+Pog_Node* parse_expr_unary(Pog_Parser* pp) {
+    Pog_Node* unary = null;
+    switch (peek(pp).kind) {
+        case .Mul:             unary = new_node(pp, Pog_Nodekind.Expr_AddressOf); break;
+        case .At:              unary = new_node(pp, Pog_Nodekind.Expr_ValueOf); break;
+        case .ExclamationMark: unary = new_node(pp, Pog_Nodekind.Expr_Not); break;
+        case .PlusPlus:        unary = new_node(pp, Pog_Nodekind.Expr_PreIncrement); break;
+        case .MinusMinus:      unary = new_node(pp, Pog_Nodekind.Expr_PreDecrement); break;
+        case .Minus:           unary = new_node(pp, Pog_Nodekind.Expr_Negate); break;
+        case .Tilde:           unary = new_node(pp, Pog_Nodekind.Expr_Bit_Not); break;
+        default: break;
+    }
+
+    Pog_Node* node = parse_expr_leaf(pp);
+    if unary {
+        unary.node1 = node;
+        node = unary;
+    }
+
+    switch (peek(pp).kind) {
+        case .PlusPlus:   unary = new_node(pp, Pog_Nodekind.Expr_PostIncrement); break;
+        case .MinusMinus: unary = new_node(pp, Pog_Nodekind.Expr_PostDecrement); break;
+        default: unary = null; break;
+    }
+
+    if unary {
+        unary.node1 = node;
+        node = unary;
+    }
+
+    if peek(pp).kind == Pog_Tokenkind.Keyword_As {
+        let cast = new_node(pp, Pog_Nodekind.Expr_Cast);
+        cast.node1 = node;
+        cast.node2 = parse_type(pp);
+        node = cast;
+    }
+
+    return node;
+}
+
+Pog_Node* parse_expr_leaf(Pog_Parser* pp) {
+    Pog_Node* node = new_node(pp, Pog_Nodekind.ERROR);
+
+    switch (node.token.kind) {
+        case .Word: {
+            node.kind = .Expr_Variable;
+        } break;
+
+        case .Keyword_Alloc: {
+            node.kind = .Expr_Alloc;
+            node.node1 = parse_type(pp);
+        } break;
+
+        case .Keyword_Sizeof: {
+            node.kind = .Expr_Sizeof;
+            node.node1 = parse_type(pp);
+        } break;
+
+        case .OpenParen: {
+            node.kind = .Expr_Parenthesized;
+            node.node1 = parse_expr(pp);
+            assert_token(pp, Pog_Tokenkind.CloseParen);
+        } break;
+
+        case .Period: { node.kind = .Expr_Deref; node.name = assert_token(pp, Pog_Tokenkind.Word); } break;
+
+        case .OpenCurl: {
+            node.kind = .Expr_Compound;
+            node.sub_nodes = list_create(sizeof Pog_Node*);
+
+            bool comma = true;
+            while token_until(pp, Pog_Tokenkind.CloseCurl) and comma {
+                if peek(pp, 1).kind == Pog_Tokenkind.Assign {
+                    assert_token(pp, Pog_Tokenkind.Word);
+                    pp.token_index++;
+                }
+                let sub = parse_expr(pp);
+                list_add(*node.sub_nodes, *sub);
+
+                comma = token(pp, Pog_Tokenkind.Comma);
+            }
+
+        } break;
+
+        case .Integer: { node.kind = .Expr_Integer; } break;
+        case .Decimal: { node.kind = .Expr_Decimal; } break;
+        case .String:  { node.kind = .Expr_String; } break;
+        case .Char:    { node.kind = .Expr_Char; } break;
+        case .Keyword_True: { node.kind = .Expr_True; } break;
+        case .Keyword_False: { node.kind = .Expr_False; } break;
+        case .Keyword_Null: { node.kind = .Expr_Null; } break;
+
+        default: return node;
+    }
+
+    Pog_Node* leaf_mod(Pog_Parser* pp, Pog_Node* node) switch (peek(pp).kind) {
+        case .Period: {
+            let deref = new_node(pp, Pog_Nodekind.Expr_Deref);
+            deref.node1 = node;
+            deref.name = assert_token(pp, Pog_Tokenkind.Word);
+            return deref;
+        }
+
+        case .OpenParen: {
+            let call = new_node(pp, Pog_Nodekind.Expr_ProcCall);
+            call.node1 = node;
+            if token(pp, Pog_Tokenkind.CloseParen) return call;
+
+            call.sub_nodes = list_create(sizeof Pog_Node*);
+            arg_loop: {
+                let sub = parse_expr(pp);
+                list_add(*call.sub_nodes, *sub);
+                if token(pp, Pog_Tokenkind.Comma) goto arg_loop;
+            }
+
+            assert_token(pp, Pog_Tokenkind.CloseParen);
+            return call;
+        }
+
+        case .OpenSquare: {
+            let indexing = new_node(pp, Pog_Nodekind.Expr_Indexing);
+            indexing.node1 = node;
+            indexing.node2 = parse_expr(pp);
+            assert_token(pp, Pog_Tokenkind.CloseSquare);
+            return indexing;
+        }
+
+        default: return null;
+    }
+
+    while true {
+        let mod = leaf_mod(pp, node);
+        if mod   node = mod;
+        else break;
+    }
+
+    return node;
+}
+
+
+void print_node(uint32 tabs, StringBuilder* sb, Pog_Node* node) {
+
+    for 0 .. tabs sb_append(sb, "    ");
+    sb_append(sb, get_str(node.kind));
+    sb_append(sb, ":");
+    sb_append(sb, to_string(node.token.row+1));
+    sb_append(sb, ":");
+    sb_append(sb, to_string(node.token.col+1));
+    sb_append(sb, " ");
+
+    if node.name.kind != 0 sb_append(sb, node.name.data.str);
+    else sb_append(sb, node.token.data.str);
+
+    sb_append(sb, " ");
+    sb_append(sb, concat("(", to_string(node.token.data.integer), ") "));
+    sb_append(sb, concat("(", to_string(node.token.data.decimal as float32), ")"));
+
+    sb_append(sb, "\n");
+
+    if node.node1 print_node(tabs+1, sb, node.node1);
+    if node.node2 print_node(tabs+1, sb, node.node2);
+    if node.node3 print_node(tabs+1, sb, node.node3);
+    if node.node4 print_node(tabs+1, sb, node.node4);
+
+    for 0 .. list_length(node.sub_nodes) {
+        print_node(tabs+1, sb, node.sub_nodes[it]);
+    }
+
+    // switch (node.kind) {
+    // }
+}
+
+void print_ast(StringBuilder* sb, Pog_Unit* unit) {
+
+    for 0 .. list_length(unit.top_level_nodes) {
+        let node = unit.top_level_nodes[it];
+        print_node(0, sb, node);
+    }
+
+}

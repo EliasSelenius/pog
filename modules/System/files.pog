@@ -12,17 +12,15 @@ struct FileInfo {
     uint64 bytesize;
 }
 
-struct FileQueryOptions {
-    bool recursive;
-    bool include_files;
-    bool include_folders;
-}
-
-void query_files(char* dir_path, FileQueryOptions options, void(FileInfo, void*) callback, void* user_ptr) {
-    char* query = concat(dir_path, "*");
+void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* user_ptr) {
+    char* query = concat(dir_path, "\\*");
 
     WIN32_FIND_DATAA data = {};
     HANDLE handle = FindFirstFileA(query, *data);
+
+    // HANDLE handle = FindFirstFileA(query, *data);
+    // for bool l = true, l, l = FindNextFileA(handle, *data) {
+    // }
 
     loop: {
         let error = GetLastError();
@@ -33,16 +31,16 @@ void query_files(char* dir_path, FileQueryOptions options, void(FileInfo, void*)
             default: goto done;
         }
 
+        char* file_name = data.cFileName;
+
         FileInfo info = {};
         info.file_kind = data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? .folder : .file;
         info.bytesize  = (data.nFileSizeHigh as uint64 << 32) | data.nFileSizeLow;
-        // info.path = get_full_path(data.cFileName as char*, *info.name);
-        info.name = alloc_string_copy(data.cFileName as char*);
 
-        char* res = malloc(MAX_PATH);
-        PathCombineA(res, dir_path, data.cFileName as char*);
-        info.path = make_string(res);
-
+        char* path_buffer = malloc(MAX_PATH);
+        PathCombineA(path_buffer, temp_cstr(dir_path), file_name);
+        info.path = make_string(path_buffer);
+        info.name = trim_start(substr_to_end(info.path, '\\'), 1);
 
         callback(info, user_ptr);
 
@@ -53,14 +51,14 @@ void query_files(char* dir_path, FileQueryOptions options, void(FileInfo, void*)
 }
 
 // TODO: option to resue existing list
-FileInfo* query_files(string filename) {
+FileInfo[..] enumerate_directory(string dir_path) {
     void append_fileinfo(FileInfo info, void* user_ptr) {
-        let list = user_ptr as FileInfo**;
+        let list = user_ptr as FileInfo[..]*;
         list_add(list, *info);
     }
 
-    FileInfo* list = list_create(sizeof FileInfo);
-    query_files(filename.chars, {} as FileQueryOptions, append_fileinfo, *list as void*);
+    FileInfo[..] list = list_create(sizeof FileInfo);
+    enumerate_directory(dir_path, append_fileinfo, *list as void*);
     return list;
 }
 

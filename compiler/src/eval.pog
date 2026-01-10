@@ -1,0 +1,85 @@
+
+struct Pog_EvalResult {
+    Pog_Tokendata token_data;
+}
+
+Pog_EvalResult eval_node(Pog_Node* node) switch (node.kind) {
+    case ERROR: return;
+    case Expr_Plus: return;
+    case Expr_Minus: return;
+    case Expr_Mul: return;
+    case Expr_Div: return;
+    case Expr_Mod: return;
+    case Expr_Range: return;
+    case Expr_Less: return;
+    case Expr_Greater: return;
+    case Expr_LessEquals: return;
+    case Expr_GreaterEquals: return;
+    case Expr_Equals: return;
+    case Expr_NotEquals: return;
+    case Expr_And: return;
+    case Expr_Or: return;
+    case Expr_Bit_And: return;
+    case Expr_Bit_Or: return;
+    case Expr_Bit_Xor: return;
+    case Expr_Bit_Lshift: return;
+    case Expr_Bit_Rshift: return;
+    case Expr_PreIncrement: return;
+    case Expr_PostIncrement: return;
+    case Expr_PreDecrement: return;
+    case Expr_PostDecrement: return;
+    case Expr_Not: return;
+    case Expr_Bit_Not: return;
+    case Expr_AddressOf: return;
+    case Expr_ValueOf: return;
+    case Expr_Negate: return;
+
+    case Expr_Integer:  return {data = node.token};
+    case Expr_Decimal:  return {data = node.token};
+    case Expr_Char:     return {data = node.token};
+    case Expr_String:   return {data = node.token};
+    case Expr_True:     return {data = node.token};
+    case Expr_False:    return {data = node.token};
+    case Expr_Null:     return {data = node.token};
+
+    case Expr_Variable: return;
+    case Expr_Alloc: return;
+    case Expr_Ternary: return;
+    case Expr_ProcCall: return;
+    case Expr_Deref: return;
+    case Expr_Indexing: return;
+    case Expr_Cast: return;
+    case Expr_Sizeof: return;
+    case Expr_Parenthesized: return;
+    case Expr_Compound: return;
+
+    case Stmt_Declaration: return;
+    case Stmt_Constant: return;
+    case Stmt_Typedef: return;
+    case Stmt_Procedure: return;
+    case Stmt_Argument: return;
+    case Stmt_Struct: return;
+    case Stmt_Enum: return;
+    case Stmt_EnumEntry: return;
+    case Stmt_Assignment: return;
+    case Stmt_Scope: return;
+    case Stmt_If: return;
+    case Stmt_While: return;
+    case Stmt_For: return;
+    case Stmt_Switch: return;
+    case Stmt_Continue: return;
+    case Stmt_Break: return;
+    case Stmt_Return: return;
+    case Stmt_Goto: return;
+    case Stmt_Label: return;
+    case Stmt_Case: return;
+    case Stmt_Default: return;
+    case Stmt_Include: return;
+
+    case Type_MustInfer: return;
+    case Type_Basic: return;
+    case Type_Procedure: return;
+    case Type_Array: return;
+    case Type_Fixed_Array: return;
+    case Type_Dynamic_Array: return;
+}

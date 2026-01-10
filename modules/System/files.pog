@@ -33,17 +33,20 @@ void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* 
 
         char* file_name = data.cFileName;
 
-        FileInfo info = {};
-        info.file_kind = data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? .folder : .file;
-        info.bytesize  = (data.nFileSizeHigh as uint64 << 32) | data.nFileSizeLow;
+        if string_equals(file_name, ".")
+        or string_equals(file_name, "..");
+        else {
+            FileInfo info = {};
+            info.file_kind = data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? .folder : .file;
+            info.bytesize  = (data.nFileSizeHigh as uint64 << 32) | data.nFileSizeLow;
 
-        char* path_buffer = malloc(MAX_PATH);
-        PathCombineA(path_buffer, temp_cstr(dir_path), file_name);
-        info.path = make_string(path_buffer);
-        info.name = trim_start(substr_to_end(info.path, '\\'), 1);
+            char* path_buffer = malloc(MAX_PATH); // TODO: parameterize the allocator
+            PathCombineA(path_buffer, temp_cstr(dir_path), file_name);
+            info.path = make_string(path_buffer);
+            info.name = trim_start(substr_to_end(info.path, '\\'), 1);
 
-        callback(info, user_ptr);
-
+            callback(info, user_ptr);
+        }
     } if FindNextFileA(handle, *data) goto loop;
 
     done:

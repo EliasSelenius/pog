@@ -179,7 +179,7 @@ char* get_str(Pog_Nodekind kind) switch (kind) {
 // 1857loc for parser_*.c + syntax_tree.c files
 
 /* idea: this syntax tree could be a flat array of nodes
-    we would remove sub_nodes: good because its a memory leak
+    we would remove sub_nodes: good because its a list and we must traverse the tree to delete them
     remove node1, node2 etc... good because node struct is smaller
         tree structure would be encoded using a uint32 sub_node_count; field
         where the number of subsequent nodes in the list are child nodes
@@ -232,6 +232,73 @@ struct Pog_Error {
     Pog_Token token;
     string message;
 }
+
+struct Pog_Codebase {
+    Pog_Unit*[..] units;
+    Pog_Node*[..] types;
+    Pog_Node*[..] procs;
+}
+
+Pog_Codebase make_codebase() {
+    Pog_Codebase cb = {};
+    cb.units = list_create(sizeof Pog_Unit*);
+    cb.types = list_create(sizeof Pog_Node*);
+    cb.procs = list_create(sizeof Pog_Node*);
+    return cb;
+}
+
+void foreach_node(Pog_Unit* unit, bool(Pog_Node*, void*) top_down, void(Pog_Node*, void*) bottom_up, void* user_ptr) {
+    void each_node(Pog_Node* node, bool(Pog_Node*, void*) top_down, void(Pog_Node*, void*) bottom_up, void* user_ptr) {
+        if node == null return;
+
+        if top_down {
+            if !top_down(node, user_ptr) return;
+        }
+
+        each_node(node.node1, top_down, bottom_up, user_ptr);
+        each_node(node.node2, top_down, bottom_up, user_ptr);
+        each_node(node.node3, top_down, bottom_up, user_ptr);
+        each_node(node.node4, top_down, bottom_up, user_ptr);
+        if node.sub_nodes {
+            for 0 .. list_length(node.sub_nodes)  each_node(node.sub_nodes, top_down, bottom_up, user_ptr);
+        }
+
+        if bottom_up bottom_up(node, user_ptr);
+    }
+
+    for 0 .. list_length(unit.top_level_nodes) {
+        Pog_Node* node = unit.top_level_nodes[it];
+        each_node(node, top_down, bottom_up, user_ptr);
+    }
+}
+
+void add_unit(Pog_Codebase* cb, Pog_Unit* unit) {
+    list_add(*cb.units, *unit);
+
+    bool inspect_node(Pog_Node* node, Pog_Codebase* cb) {
+        return true;
+    }
+    // foreach_node(unit, inspect_node, null, cb);
+
+    for 0 .. list_length(unit.top_level_nodes) {
+        Pog_Node* node = unit.top_level_nodes[it];
+
+        switch (node.kind) {
+            case .Stmt_Typedef:
+            case .Stmt_Struct:
+            case .Stmt_Enum:
+                list_add(*cb.types, *node);
+                break;
+
+            case .Stmt_Procedure:
+                list_add(*cb.procs, *node);
+                break;
+
+            default: break;
+        }
+    }
+}
+
 
 Pog_Token peek(Pog_Parser* pp) return peek(pp, 0);
 Pog_Token peek(Pog_Parser* pp, int32 offset) {
@@ -298,6 +365,31 @@ Pog_Unit* parse(char* file_buffer) {
 
     return pp.unit;
 }
+
+void delete_unit(Pog_Unit* unit) {
+    void delete_node(Pog_Node* node) {
+        if node == null return;
+        delete_node(node.node1);
+        delete_node(node.node2);
+        delete_node(node.node3);
+        delete_node(node.node4);
+
+        if node.sub_nodes {
+            for 0 .. list_length(node.sub_nodes)  delete_node(node.sub_nodes[it]);
+            list_delete(node.sub_nodes);
+        }
+    }
+
+    for 0 .. list_length(unit.top_level_nodes) {
+        Pog_Node* node = unit.top_level_nodes[it];
+        delete_node(node);
+    }
+
+    list_delete(unit.top_level_nodes);
+    list_delete(unit.errors);
+    arena_release(unit.arena);
+}
+
 
 Pog_Node* new_node(Pog_Parser* pp, Pog_Nodekind kind) {
     Pog_Node* node = arena_alloc(pp.arena, sizeof Pog_Node);

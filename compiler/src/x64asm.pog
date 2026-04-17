@@ -1,0 +1,46 @@
+
+enum x64_Operation {
+    none;
+    add; or; adc; sbb; and; sub; xor; cmp; rex; push; pop;
+    movsxd; imul;
+    Jcc_Jb;
+    test; xchg; mov; lea; shaf; lahf;
+    ret; enter; leave; int3; int;
+    esc; loop;
+    in; out; call; jmp; int1; hlt; cmc; clc; stc; cli; sti; cld; std;
+}
+
+enum x64_Register {
+    none=0;
+    al;  cl;  dl;  bl;  ah;  ch;  dh;  bh;  r8b; r9b; r10b; r11b; r12b; r13b; r14b; r15b; // byte
+    ax;  cx;  dx;  bx;  sp;  bp;  si;  di;  r8w; r9w; r10w; r11w; r12w; r13w; r14w; r15w; // word
+    eax; ecx; edx; ebx; esp; ebp; esi; edi; r8d; r9d; r10d; r11d; r12d; r13d; r14d; r15d; // dword
+    rax; rcx; rdx; rbx; rsp; rbp; rsi; rdi; r8;  r9;  r10;  r11;  r12;  r13;  r14;  r15;  // qword
+}
+
+
+x64_Operation[0x100] x64_opcode_operation = { // TODO: make "prefix" more descriptive
+    //         0x00      0x01      0x02      0x03      0x04      0x05      0x06      0x07      0x08      0x09      0x0A      0x0B      0x0C      0x0D      0x0E      0x0F
+    /*00*/    .add,     .add,     .add,     .add,     .add,     .add,     .none,    .none,    .or,      .or,      .or,      .or,      .or,      .or,      .none,    .none,
+    /*10*/    .adc,     .adc,     .adc,     .adc,     .adc,     .adc,     .none,    .none,    .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .none,    .none,
+    /*20*/    .and,     .and,     .and,     .and,     .and,     .and,     .prefix,  .none,    .sub,     .sub,     .sub,     .sub,     .sub,     .sub,     .prefix,  .none,
+    /*30*/    .xor,     .xor,     .xor,     .xor,     .xor,     .xor,     .prefix,  .none,    .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .prefix,  .none,
+    /*40*/    .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,
+    /*50*/    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,
+    /*60*/    .none,    .none,    .none,    .movsxd,  .prefix,  .prefix,  .prefix,  .prefix,  .push,    .imul,    .push,    .imul,    .none,    .none,    .none,    .none,
+    /*70*/    .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,  .Jcc_Jb,
+    /*80*/    .none,    .none,    .none,    .none,    .test,    .test,    .xchg,    .xchg,    .mov,     .mov,     .mov,     .mov,     .mov,     .lea,     .mov,     .none,
+    /*90*/    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .none,    .none,    .none,    .none,    .none,    .none,    .shaf,    .lahf,
+    /*A0*/    .mov,     .mov,     .mov,     .mov,     .none,    .none,    .none,    .none,    .test,    .test,    .none,    .none,    .none,    .none,    .none,    .none,
+    /*B0*/    .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,
+    /*C0*/    .none,    .none,    .ret,     .ret,     .none,    .none,    .mov,     .mov,     .enter,   .leave,   .ret,     .ret,     .int3,    .int,     .none,    .none,
+    /*D0*/    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,
+    /*E0*/    .none,    .none,    .loop,    .none,    .in,      .in,      .out,     .out,     .call,    .jmp,     .jmp,     .jmp,     .in,      .in,      .out,     .out,
+    /*F0*/    .prefix,  .int1,    .prefix,  .prefix,  .hlt,     .cmc,     .none,    .none,    .clc,     .stc,     .cli,     .sti,     .cld,     .std,     .none,    .none,
+};
+
+struct x64_Instruction {
+    x64_Operation operation;
+}
+
+uint32 decode_instruction(byte* ptr, x64_Instruction* inst);

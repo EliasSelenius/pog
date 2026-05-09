@@ -9,22 +9,25 @@ include "../../grax/src/math.pog";
 
 include "src/tokenizer.pog";
 include "src/ast.pog";
+include "src/pe32plus.pog";
 
-
-// ..\..\plang\bin\plang.exe src\main.pog cflags -g -fsanitize=address
+// ..\..\plang\bin\plang.exe src\main.pog cflags -g
 
 const Hex=0xFF_A0;
 const MyPi=3_.1_4;
 const MyInt=1_2_3__;
 
 void main() {
-    char* file_buffer = fileread("src/main.pog");
-    let unit = parse(file_buffer);
 
-    let sb = sb_create();
-    print_ast(*sb, unit);
-    print(to_string(sb));
-    sb_free(sb);
+    read_exe("output.exe");
+
+    // char* file_buffer = fileread("src/main.pog");
+    // let unit = parse(file_buffer);
+
+    // let sb = sb_create();
+    // print_ast(*sb, unit);
+    // print(to_string(sb));
+    // sb_free(sb);
 
 }
 

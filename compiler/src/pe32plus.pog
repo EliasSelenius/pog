@@ -1,0 +1,113 @@
+
+
+
+struct COFF_File_Header {
+    uint16 Machine;              // The number that identifies the type of target machine. For more information, one of Image_File_Machine
+    uint16 NumberOfSections;     // The number of sections. This indicates the size of the section table, which immediately follows the headers.
+    uint32 TimeDateStamp;        // The low 32 bits of the number of seconds since 00:00 January 1, 1970 (a C run-time time_t value), which indicates when the file was created.
+    uint32 PointerToSymbolTable; // The file offset of the COFF symbol table, or zero if no COFF symbol table is present. This value should be zero for an image because COFF debugging information is deprecated.
+    uint32 NumberOfSymbols;      // The number of entries in the symbol table. This data can be used to locate the string table, which immediately follows the symbol table. This value should be zero for an image because COFF debugging information is deprecated.
+    uint16 SizeOfOptionalHeader; // The size of the optional header, which is required for executable files but not for object files. This value should be zero for an object file. For a description of the header format, see Optional Header (Image Only).
+    uint16 Characteristics;      // The flags that indicate the attributes of the file. For specific flag values, see Characteristics.
+}
+
+enum Image_File_Machine {
+    UNKNOWN     = 0x0;    // The content of this field is assumed to be applicable to any machine type
+    ALPHA       = 0x184;  // Alpha AXP, 32-bit address space
+    ALPHA64     = 0x284;  // Alpha 64, 64-bit address space
+    AM33        = 0x1d3;  // Matsushita AM33
+    AMD64       = 0x8664; // x64
+    ARM         = 0x1c0;  // ARM little endian
+    ARM64       = 0xaa64; // ARM64 little endian
+    ARM64EC     = 0xA641; // ABI that enables interoperability between native ARM64 and emulated x64 code.
+    ARM64X      = 0xA64E; // Binary format that allows both native ARM64 and ARM64EC code to coexist in the same file.
+    ARMNT       = 0x1c4;  // ARM Thumb-2 little endian
+    AXP64       = 0x284;  // AXP 64 (Same as Alpha 64)
+    EBC         = 0xebc;  // EFI byte code
+    I386        = 0x14c;  // Intel 386 or later processors and compatible processors
+    IA64        = 0x200;  // Intel Itanium processor family
+    LOONGARCH32 = 0x6232; // LoongArch 32-bit processor family
+    LOONGARCH64 = 0x6264; // LoongArch 64-bit processor family
+    M32R        = 0x9041; // Mitsubishi M32R little endian
+    MIPS16      = 0x266;  // MIPS16
+    MIPSFPU     = 0x366;  // MIPS with FPU
+    MIPSFPU16   = 0x466;  // MIPS16 with FPU
+    POWERPC     = 0x1f0;  // Power PC little endian
+    POWERPCFP   = 0x1f1;  // Power PC with floating point support
+    R3000BE     = 0x160;  // MIPS I compatible 32-bit big endian
+    R3000       = 0x162;  // MIPS I compatible 32-bit little endian
+    R4000       = 0x166;  // MIPS III compatible 64-bit little endian
+    R10000      = 0x168;  // MIPS IV compatible 64-bit little endian
+    RISCV32     = 0x5032; // RISC-V 32-bit address space
+    RISCV64     = 0x5064; // RISC-V 64-bit address space
+    RISCV128    = 0x5128; // RISC-V 128-bit address space
+    SH3         = 0x1a2;  // Hitachi SH3
+    SH3DSP      = 0x1a3;  // Hitachi SH3 DSP
+    SH4         = 0x1a6;  // Hitachi SH4
+    SH5         = 0x1a8;  // Hitachi SH5
+    THUMB       = 0x1c2;  // Thumb
+    WCEMIPSV2   = 0x169;  // MIPS little-endian WCE v2
+}
+
+struct Image_Nt_Headers {
+    uint32 signature;
+    COFF_File_Header file_header;
+    Image_Optional_Header_64 optional_header;
+}
+
+struct Image_Optional_Header_64 {
+    uint16 Magic;
+    uint8  MajorLinkerVersion;
+    uint8  MinorLinkerVersion;
+    uint32 SizeOfCode;
+    uint32 SizeOfInitializedData;
+    uint32 SizeOfUninitializedData;
+    uint32 AddressOfEntryPoint;
+    uint32 BaseOfCode;
+    uint64 ImageBase;
+    uint32 SectionAlignment;
+    uint32 FileAlignment;
+    uint16 MajorOperatingSystemVersion;
+    uint16 MinorOperatingSystemVersion;
+    uint16 MajorImageVersion;
+    uint16 MinorImageVersion;
+    uint16 MajorSubsystemVersion;
+    uint16 MinorSubsystemVersion;
+    uint32 Win32VersionValue;
+    uint32 SizeOfImage;
+    uint32 SizeOfHeaders;
+    uint32 CheckSum;
+    uint16 Subsystem;
+    uint16 DllCharacteristics;
+    uint64 SizeOfStackReserve;
+    uint64 SizeOfStackCommit;
+    uint64 SizeOfHeapReserve;
+    uint64 SizeOfHeapCommit;
+    uint32 LoaderFlags;
+    uint32 NumberOfRvaAndSizes;
+    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
+}
+
+
+void read_exe(char* filename) {
+    byte[] bytes = read_binary_file(filename);
+    byte* ptr = bytes.data;
+
+    uint32 file_addr_of_new_exe_header = @(*bytes[0x3c] as uint32*);
+
+    char* magicnr_PE = ptr + file_addr_of_new_exe_header;
+
+    print("Magic Nr.: ", magicnr_PE[0], magicnr_PE[1], magicnr_PE[2], magicnr_PE[3], "\n");
+
+    COFF_File_Header* coff_header = ptr + file_addr_of_new_exe_header + 4;
+    print("coff_header:\n");
+    print("    Machine             : ", coff_header.Machine, "\n");
+    print("    NumberOfSections    : ", coff_header.NumberOfSections, "\n");
+    print("    TimeDateStamp       : ", coff_header.TimeDateStamp, "\n");
+    print("    PointerToSymbolTable: ", coff_header.PointerToSymbolTable, "\n");
+    print("    NumberOfSymbols     : ", coff_header.NumberOfSymbols, "\n");
+    print("    SizeOfOptionalHeader: ", coff_header.SizeOfOptionalHeader, "\n");
+    print("    Characteristics     : ", coff_header.Characteristics, "\n");
+
+
+}

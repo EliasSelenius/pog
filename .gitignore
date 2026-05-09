@@ -3,3 +3,4 @@ compiler/output.exp
 compiler/output.lib
 compiler/output.pdb
 compiler/output.rdi
+compiler/output.ilk

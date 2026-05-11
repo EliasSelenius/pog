@@ -47,15 +47,22 @@ typedef struct Pog_Error Pog_Error;
 typedef struct Pog_Codebase Pog_Codebase;
 typedef struct Pog_Binary_Op Pog_Binary_Op;
 typedef struct COFF_File_Header COFF_File_Header;
+typedef struct Image_Nt_Headers Image_Nt_Headers;
+typedef struct Image_Optional_Header_64 Image_Optional_Header_64;
+typedef struct x64_Instruction x64_Instruction;
+typedef struct x64_Operand x64_Operand;
+typedef struct ModRM_SIB_disp ModRM_SIB_disp;
 
 // Enums
 typedef uint32 Typekind;
 typedef uint32 Pog_Tokenkind;
 typedef uint32 Pog_Nodekind;
 typedef uint32 Image_File_Machine;
+typedef uint32 x64_Operation;
+typedef uint32 x64_Register;
+typedef uint32 x64_Operand_Kind;
 
 // Type aliases
-typedef uint32 My_Type;
 typedef uint8 bool;
 typedef int32 bool32;
 typedef uint8 byte;
@@ -178,6 +185,52 @@ struct COFF_File_Header { // deps = 0
     uint16 SizeOfOptionalHeader;
     uint16 Characteristics;
 };
+struct Image_Optional_Header_64 { // deps = 0
+    uint16 Magic;
+    uint8 MajorLinkerVersion;
+    uint8 MinorLinkerVersion;
+    uint32 SizeOfCode;
+    uint32 SizeOfInitializedData;
+    uint32 SizeOfUninitializedData;
+    uint32 AddressOfEntryPoint;
+    uint32 BaseOfCode;
+    uint64 ImageBase;
+    uint32 SectionAlignment;
+    uint32 FileAlignment;
+    uint16 MajorOperatingSystemVersion;
+    uint16 MinorOperatingSystemVersion;
+    uint16 MajorImageVersion;
+    uint16 MinorImageVersion;
+    uint16 MajorSubsystemVersion;
+    uint16 MinorSubsystemVersion;
+    uint32 Win32VersionValue;
+    uint32 SizeOfImage;
+    uint32 SizeOfHeaders;
+    uint32 CheckSum;
+    uint16 Subsystem;
+    uint16 DllCharacteristics;
+    uint64 SizeOfStackReserve;
+    uint64 SizeOfStackCommit;
+    uint64 SizeOfHeapReserve;
+    uint64 SizeOfHeapCommit;
+    uint32 LoaderFlags;
+    uint32 NumberOfRvaAndSizes;
+};
+struct x64_Operand { // deps = 0
+    x64_Operand_Kind kind;
+    x64_Register reg;
+    x64_Register index;
+    uint32 scale;
+    int64 imm_value;
+};
+struct ModRM_SIB_disp { // deps = 0
+    byte reg;
+    byte mem;
+    byte idx;
+    bool mem_is_register;
+    uint32 scale;
+    int32 disp;
+};
 struct SR_Token { // deps = 1
     string str;
     uint32 line;
@@ -205,6 +258,16 @@ struct Pog_Token { // deps = 2
     uint32 row;
     uint32 col;
     Pog_TokenData data;
+};
+struct Image_Nt_Headers { // deps = 2
+    uint32 signature;
+    COFF_File_Header file_header;
+    Image_Optional_Header_64 optional_header;
+};
+struct x64_Instruction { // deps = 2
+    x64_Operation operation;
+    x64_Operand dst_operand;
+    x64_Operand src_operand;
 };
 struct WIN32_FIND_DATAW { // deps = 3
     uint32 dwFileAttributes;
@@ -487,7 +550,7 @@ static TypeInfo rtti_types[] = {
         .fields = (Array) { .length = 3, .data = (StructField[]){
             {.type_info = (rtti_types+6), .name = "nLength", .offset = 0},
             {.type_info = (rtti_types+0), .name = "lpSecurityDescriptor", .offset = 8},
-            {.type_info = (rtti_types+49), .name = "bInheritHandle", .offset = 16},
+            {.type_info = (rtti_types+56), .name = "bInheritHandle", .offset = 16},
         }},
     },
     {
@@ -502,7 +565,7 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+0), .name = "inner_type", .offset = 8},
             {.type_info = (rtti_types+7), .name = "bytesize", .offset = 16},
             {.type_info = (rtti_types+6), .name = "alignment", .offset = 24},
-            {.type_info = (rtti_types+43), .name = "kind", .offset = 28},
+            {.type_info = (rtti_types+48), .name = "kind", .offset = 28},
             {.type_info = (rtti_types+6), .name = "num_ptr", .offset = 32},
             {.type_info = (rtti_types+0), .name = "fields", .offset = 40},
             {.type_info = (rtti_types+0), .name = "entries", .offset = 56},
@@ -687,7 +750,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 4, .data = (StructField[]){
-            {.type_info = (rtti_types+44), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+49), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "row", .offset = 4},
             {.type_info = (rtti_types+6), .name = "col", .offset = 8},
             {.type_info = (rtti_types+35), .name = "data", .offset = 16},
@@ -715,7 +778,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 10, .data = (StructField[]){
-            {.type_info = (rtti_types+45), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+50), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "ptr_degree", .offset = 4},
             {.type_info = (rtti_types+34), .name = "token", .offset = 8},
             {.type_info = (rtti_types+34), .name = "name", .offset = 64},
@@ -787,8 +850,8 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 2, .data = (StructField[]){
-            {.type_info = (rtti_types+44), .name = "token_kind", .offset = 0},
-            {.type_info = (rtti_types+45), .name = "node_kind", .offset = 4},
+            {.type_info = (rtti_types+49), .name = "token_kind", .offset = 0},
+            {.type_info = (rtti_types+50), .name = "node_kind", .offset = 4},
         }},
     },
     {
@@ -806,6 +869,102 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+6), .name = "NumberOfSymbols", .offset = 12},
             {.type_info = (rtti_types+5), .name = "SizeOfOptionalHeader", .offset = 16},
             {.type_info = (rtti_types+5), .name = "Characteristics", .offset = 18},
+        }},
+    },
+    {
+        .name = "Image_Nt_Headers",
+        .inner_type = 0,
+        .bytesize = 136,
+        .alignment = 8,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 3, .data = (StructField[]){
+            {.type_info = (rtti_types+6), .name = "signature", .offset = 0},
+            {.type_info = (rtti_types+42), .name = "file_header", .offset = 4},
+            {.type_info = (rtti_types+44), .name = "optional_header", .offset = 24},
+        }},
+    },
+    {
+        .name = "Image_Optional_Header_64",
+        .inner_type = 0,
+        .bytesize = 112,
+        .alignment = 8,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 29, .data = (StructField[]){
+            {.type_info = (rtti_types+5), .name = "Magic", .offset = 0},
+            {.type_info = (rtti_types+4), .name = "MajorLinkerVersion", .offset = 2},
+            {.type_info = (rtti_types+4), .name = "MinorLinkerVersion", .offset = 3},
+            {.type_info = (rtti_types+6), .name = "SizeOfCode", .offset = 4},
+            {.type_info = (rtti_types+6), .name = "SizeOfInitializedData", .offset = 8},
+            {.type_info = (rtti_types+6), .name = "SizeOfUninitializedData", .offset = 12},
+            {.type_info = (rtti_types+6), .name = "AddressOfEntryPoint", .offset = 16},
+            {.type_info = (rtti_types+6), .name = "BaseOfCode", .offset = 20},
+            {.type_info = (rtti_types+7), .name = "ImageBase", .offset = 24},
+            {.type_info = (rtti_types+6), .name = "SectionAlignment", .offset = 32},
+            {.type_info = (rtti_types+6), .name = "FileAlignment", .offset = 36},
+            {.type_info = (rtti_types+5), .name = "MajorOperatingSystemVersion", .offset = 40},
+            {.type_info = (rtti_types+5), .name = "MinorOperatingSystemVersion", .offset = 42},
+            {.type_info = (rtti_types+5), .name = "MajorImageVersion", .offset = 44},
+            {.type_info = (rtti_types+5), .name = "MinorImageVersion", .offset = 46},
+            {.type_info = (rtti_types+5), .name = "MajorSubsystemVersion", .offset = 48},
+            {.type_info = (rtti_types+5), .name = "MinorSubsystemVersion", .offset = 50},
+            {.type_info = (rtti_types+6), .name = "Win32VersionValue", .offset = 52},
+            {.type_info = (rtti_types+6), .name = "SizeOfImage", .offset = 56},
+            {.type_info = (rtti_types+6), .name = "SizeOfHeaders", .offset = 60},
+            {.type_info = (rtti_types+6), .name = "CheckSum", .offset = 64},
+            {.type_info = (rtti_types+5), .name = "Subsystem", .offset = 68},
+            {.type_info = (rtti_types+5), .name = "DllCharacteristics", .offset = 70},
+            {.type_info = (rtti_types+7), .name = "SizeOfStackReserve", .offset = 72},
+            {.type_info = (rtti_types+7), .name = "SizeOfStackCommit", .offset = 80},
+            {.type_info = (rtti_types+7), .name = "SizeOfHeapReserve", .offset = 88},
+            {.type_info = (rtti_types+7), .name = "SizeOfHeapCommit", .offset = 96},
+            {.type_info = (rtti_types+6), .name = "LoaderFlags", .offset = 104},
+            {.type_info = (rtti_types+6), .name = "NumberOfRvaAndSizes", .offset = 108},
+        }},
+    },
+    {
+        .name = "x64_Instruction",
+        .inner_type = 0,
+        .bytesize = 56,
+        .alignment = 8,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 3, .data = (StructField[]){
+            {.type_info = (rtti_types+52), .name = "operation", .offset = 0},
+            {.type_info = (rtti_types+46), .name = "dst_operand", .offset = 8},
+            {.type_info = (rtti_types+46), .name = "src_operand", .offset = 32},
+        }},
+    },
+    {
+        .name = "x64_Operand",
+        .inner_type = 0,
+        .bytesize = 24,
+        .alignment = 8,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 5, .data = (StructField[]){
+            {.type_info = (rtti_types+54), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+53), .name = "reg", .offset = 4},
+            {.type_info = (rtti_types+53), .name = "index", .offset = 8},
+            {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
+            {.type_info = (rtti_types+3), .name = "imm_value", .offset = 16},
+        }},
+    },
+    {
+        .name = "ModRM_SIB_disp",
+        .inner_type = 0,
+        .bytesize = 12,
+        .alignment = 4,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 6, .data = (StructField[]){
+            {.type_info = (rtti_types+57), .name = "reg", .offset = 0},
+            {.type_info = (rtti_types+57), .name = "mem", .offset = 1},
+            {.type_info = (rtti_types+57), .name = "idx", .offset = 2},
+            {.type_info = (rtti_types+55), .name = "mem_is_register", .offset = 3},
+            {.type_info = (rtti_types+6), .name = "scale", .offset = 4},
+            {.type_info = (rtti_types+2), .name = "disp", .offset = 8},
         }},
     },
     {
@@ -1057,13 +1216,146 @@ static TypeInfo rtti_types[] = {
         }},
     },
     {
-        .name = "My_Type",
+        .name = "x64_Operation",
         .inner_type = 0,
         .bytesize = 4,
         .alignment = 4,
-        .kind = 18,
+        .kind = 17,
         .num_ptr = 0,
-        
+        .entries = (Array) { .length = 42, .data = (EnumEntry[]){
+            {.name = "NONE", .value = 0},
+            {.name = "ADD", .value = 1},
+            {.name = "OR", .value = 2},
+            {.name = "ADC", .value = 3},
+            {.name = "SBB", .value = 4},
+            {.name = "AND", .value = 5},
+            {.name = "SUB", .value = 6},
+            {.name = "XOR", .value = 7},
+            {.name = "CMP", .value = 8},
+            {.name = "REX", .value = 9},
+            {.name = "PUSH", .value = 10},
+            {.name = "POP", .value = 11},
+            {.name = "MOVSXD", .value = 12},
+            {.name = "IMUL", .value = 13},
+            {.name = "Jcc", .value = 14},
+            {.name = "TEST", .value = 15},
+            {.name = "XCHG", .value = 16},
+            {.name = "MOV", .value = 17},
+            {.name = "LEA", .value = 18},
+            {.name = "SHAF", .value = 19},
+            {.name = "LAHF", .value = 20},
+            {.name = "RET", .value = 21},
+            {.name = "ENTER", .value = 22},
+            {.name = "LEAVE", .value = 23},
+            {.name = "INT3", .value = 24},
+            {.name = "INT", .value = 25},
+            {.name = "ESC", .value = 26},
+            {.name = "LOOP", .value = 27},
+            {.name = "IN", .value = 28},
+            {.name = "OUT", .value = 29},
+            {.name = "CALL", .value = 30},
+            {.name = "JMP", .value = 31},
+            {.name = "INT1", .value = 32},
+            {.name = "HLT", .value = 33},
+            {.name = "CMC", .value = 34},
+            {.name = "CLC", .value = 35},
+            {.name = "STC", .value = 36},
+            {.name = "CLI", .value = 37},
+            {.name = "STI", .value = 38},
+            {.name = "CLD", .value = 39},
+            {.name = "STD", .value = 40},
+            {.name = "PREFIX", .value = 41},
+        }},
+    },
+    {
+        .name = "x64_Register",
+        .inner_type = 0,
+        .bytesize = 4,
+        .alignment = 4,
+        .kind = 17,
+        .num_ptr = 0,
+        .entries = (Array) { .length = 66, .data = (EnumEntry[]){
+            {.name = "none", .value = 0},
+            {.name = "al", .value = 1},
+            {.name = "cl", .value = 2},
+            {.name = "dl", .value = 3},
+            {.name = "bl", .value = 4},
+            {.name = "ah", .value = 5},
+            {.name = "ch", .value = 6},
+            {.name = "dh", .value = 7},
+            {.name = "bh", .value = 8},
+            {.name = "r8b", .value = 9},
+            {.name = "r9b", .value = 10},
+            {.name = "r10b", .value = 11},
+            {.name = "r11b", .value = 12},
+            {.name = "r12b", .value = 13},
+            {.name = "r13b", .value = 14},
+            {.name = "r14b", .value = 15},
+            {.name = "r15b", .value = 16},
+            {.name = "ax", .value = 17},
+            {.name = "cx", .value = 18},
+            {.name = "dx", .value = 19},
+            {.name = "bx", .value = 20},
+            {.name = "sp", .value = 21},
+            {.name = "bp", .value = 22},
+            {.name = "si", .value = 23},
+            {.name = "di", .value = 24},
+            {.name = "r8w", .value = 25},
+            {.name = "r9w", .value = 26},
+            {.name = "r10w", .value = 27},
+            {.name = "r11w", .value = 28},
+            {.name = "r12w", .value = 29},
+            {.name = "r13w", .value = 30},
+            {.name = "r14w", .value = 31},
+            {.name = "r15w", .value = 32},
+            {.name = "eax", .value = 33},
+            {.name = "ecx", .value = 34},
+            {.name = "edx", .value = 35},
+            {.name = "ebx", .value = 36},
+            {.name = "esp", .value = 37},
+            {.name = "ebp", .value = 38},
+            {.name = "esi", .value = 39},
+            {.name = "edi", .value = 40},
+            {.name = "r8d", .value = 41},
+            {.name = "r9d", .value = 42},
+            {.name = "r10d", .value = 43},
+            {.name = "r11d", .value = 44},
+            {.name = "r12d", .value = 45},
+            {.name = "r13d", .value = 46},
+            {.name = "r14d", .value = 47},
+            {.name = "r15d", .value = 48},
+            {.name = "rax", .value = 49},
+            {.name = "rcx", .value = 50},
+            {.name = "rdx", .value = 51},
+            {.name = "rbx", .value = 52},
+            {.name = "rsp", .value = 53},
+            {.name = "rbp", .value = 54},
+            {.name = "rsi", .value = 55},
+            {.name = "rdi", .value = 56},
+            {.name = "r8", .value = 57},
+            {.name = "r9", .value = 58},
+            {.name = "r10", .value = 59},
+            {.name = "r11", .value = 60},
+            {.name = "r12", .value = 61},
+            {.name = "r13", .value = 62},
+            {.name = "r14", .value = 63},
+            {.name = "r15", .value = 64},
+            {.name = "rip", .value = 65},
+        }},
+    },
+    {
+        .name = "x64_Operand_Kind",
+        .inner_type = 0,
+        .bytesize = 4,
+        .alignment = 4,
+        .kind = 17,
+        .num_ptr = 0,
+        .entries = (Array) { .length = 4, .data = (EnumEntry[]){
+            {.name = "None", .value = 0},
+            {.name = "Immediate", .value = 1},
+            {.name = "Register", .value = 2},
+            {.name = "Memory", .value = 3},
+        }},
     },
     {
         .name = "bool",
@@ -1115,7 +1407,6 @@ static TypeInfo rtti_types[] = {
 
 // Forward declarations
 void __main();
-static float32 test();
 int32 fopen_s(FILE** stream, char* filename, char* mode);
 int32 fclose(FILE* stream);
 int32 fseek(FILE* stream, int32 offset, int32 origin);
@@ -1568,37 +1859,26 @@ static Pog_Node* parse_expr_leaf(Pog_Parser* pp);
 static void print_node(uint32 tabs, StringBuilder* sb, Pog_Node* node);
 static void print_ast(StringBuilder* sb, Pog_Unit* unit);
 static void read_exe(char* filename);
+static char* to_string_overload9(x64_Operation op);
+static char* to_string_overload10(x64_Register reg);
+static x64_Register reg_from_index(byte index, uint32 bytesize);
+static byte* decode_instruction(byte* start_ptr, x64_Instruction* inst);
+static byte* modrm(byte* ptr, ModRM_SIB_disp* m);
+static void stringify_overload1(x64_Instruction inst, StringBuilder* sb);
+static void stringify_overload2(x64_Operand op, StringBuilder* sb);
+static void run_tests();
 
 // Declarations
 static Array pog_all_ops = (Array) { .length = 6, .data = (Array[]){(Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {23, 13}, (Pog_Binary_Op) {24, 14}}}, (Array) { .length = 6, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {60, 7}, (Pog_Binary_Op) {61, 8}, (Pog_Binary_Op) {62, 9}, (Pog_Binary_Op) {63, 10}, (Pog_Binary_Op) {64, 11}, (Pog_Binary_Op) {65, 12}}}, (Array) { .length = 1, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {42, 6}}}, (Array) { .length = 5, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {49, 15}, (Pog_Binary_Op) {50, 16}, (Pog_Binary_Op) {51, 17}, (Pog_Binary_Op) {52, 18}, (Pog_Binary_Op) {53, 19}}}, (Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {67, 1}, (Pog_Binary_Op) {68, 2}}}, (Array) { .length = 3, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {69, 3}, (Pog_Binary_Op) {70, 4}, (Pog_Binary_Op) {71, 5}}}}};
-static char* message = "Hello, Seamen!\n";
+static x64_Operation x64_opcode_operation[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 41, 0, 6, 6, 6, 6, 6, 6, 41, 0, 7, 7, 7, 7, 7, 7, 41, 0, 8, 8, 8, 8, 8, 8, 41, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 41, 41, 41, 41, 10, 13, 10, 13, 0, 0, 0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 41, 32, 41, 41, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
+static byte x64_opcode_modrm[256] = {1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static byte x64_opcode_immediate[256] = {0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static StringBuilder* temps;
 static uint32 rotation = 0;
 
 // Implementations
 void __main() {
-    read_exe("output.exe");
-}
-static float32 test() {
-    float32 v = (3.140000 * (2 + 3));
-    if (v < 0) {
-        void* n = 0;
-    }
-    // static decl;
-    char* c = message;
-    while (1) {
-        if (*c); else break;
-        switch (*c) {
-            case 'l':;
-            goto done;
-            default:;
-            c++;
-            continue;
-        }
-        done:;
-        c++;
-    }
-    return v;
+    run_tests();
 }
 int32 fopen_s(FILE** stream, char* filename, char* mode);
 int32 fclose(FILE* stream);
@@ -4545,6 +4825,486 @@ static void read_exe(char* filename) {
     printf("%s%u%s", "    NumberOfSymbols     : ", coff_header->NumberOfSymbols, "\n");
     printf("%s%hu%s", "    SizeOfOptionalHeader: ", coff_header->SizeOfOptionalHeader, "\n");
     printf("%s%hu%s", "    Characteristics     : ", coff_header->Characteristics, "\n");
+}
+static char* to_string_overload9(x64_Operation op) {
+    switch (op) {
+        default:;
+        case 0:;
+        return "(invalid)";
+        case 1:;
+        return "add";
+        case 2:;
+        return "or";
+        case 3:;
+        return "adc";
+        case 4:;
+        return "sbb";
+        case 5:;
+        return "and";
+        case 6:;
+        return "sub";
+        case 7:;
+        return "xor";
+        case 8:;
+        return "cmp";
+        case 9:;
+        return "rex";
+        case 10:;
+        return "push";
+        case 11:;
+        return "pop";
+        case 12:;
+        return "movsxd";
+        case 13:;
+        return "imul";
+        case 14:;
+        return "jcc";
+        case 15:;
+        return "test";
+        case 16:;
+        return "xchg";
+        case 17:;
+        return "mov";
+        case 18:;
+        return "lea";
+        case 19:;
+        return "shaf";
+        case 20:;
+        return "lahf";
+        case 21:;
+        return "ret";
+        case 22:;
+        return "enter";
+        case 23:;
+        return "leave";
+        case 24:;
+        return "int3";
+        case 25:;
+        return "int";
+        case 26:;
+        return "esc";
+        case 27:;
+        return "loop";
+        case 28:;
+        return "in";
+        case 29:;
+        return "out";
+        case 30:;
+        return "call";
+        case 31:;
+        return "jmp";
+        case 32:;
+        return "int1";
+        case 33:;
+        return "hlt";
+        case 34:;
+        return "cmc";
+        case 35:;
+        return "clc";
+        case 36:;
+        return "stc";
+        case 37:;
+        return "cli";
+        case 38:;
+        return "sti";
+        case 39:;
+        return "cld";
+        case 40:;
+        return "std";
+        case 41:;
+        return "prefix";
+    }
+}
+static char* to_string_overload10(x64_Register reg) {
+    Array strs = (Array) { .length = 66, .data = (char*[]){"none", "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rip"}};
+    return ((char**)strs.data)[reg];
+}
+static x64_Register reg_from_index(byte index, uint32 bytesize) {
+    if (index == -1) return 65;
+    switch (bytesize) {
+        case 1:;
+        return (1 + index);
+        case 2:;
+        return (17 + index);
+        case 4:;
+        return (33 + index);
+        case 8:;
+        return (49 + index);
+        default:;
+        break;
+    }
+    return 0;
+}
+static uint32 bytesize(uint32 size_selector, uint32 opsize) {
+    switch (size_selector) {
+        default:;
+        case 0:;
+        return 0;
+        case 1:;
+        return 1;
+        case 2:;
+        return opsize;
+        case 3:;
+        return (opsize <= 4) ? opsize : 4;
+    }
+}
+static byte* decode_instruction(byte* start_ptr, x64_Instruction* inst) {
+    *inst = (x64_Instruction) {0};
+    uint32 opsize = 4;
+    uint32 adsize = 8;
+    byte* ptr = start_ptr;
+    switch (*ptr) {
+        case 100:;
+        ptr++;
+        break;
+        case 101:;
+        ptr++;
+        break;
+        case 102:;
+        ptr++;
+        opsize = 2;
+        break;
+        case 103:;
+        ptr++;
+        adsize = 4;
+        break;
+    }
+    byte opcode = *ptr;
+    x64_Operation op = x64_opcode_operation[opcode];
+    byte bit_ext_reg = 0;
+    byte bit_ext_idx = 0;
+    byte bit_ext_mem = 0;
+    if (op == 9) {
+        if (opcode & 8) opsize = 8;
+        bit_ext_reg = ((*ptr & 4) << 1);
+        bit_ext_idx = ((*ptr & 2) << 2);
+        bit_ext_mem = ((*ptr & 1) << 3);
+        ptr++;
+        opcode = *ptr;
+        op = x64_opcode_operation[opcode];
+    }
+    inst->operation = op;
+    byte modrm_byte_present = x64_opcode_modrm[opcode];
+    if (modrm_byte_present) {
+        ModRM_SIB_disp m = (ModRM_SIB_disp) {0};
+        ptr = modrm(++ptr, &m);
+        m.reg |= bit_ext_reg;
+        m.idx |= bit_ext_idx;
+        m.mem |= bit_ext_mem;
+        x64_Operand op1 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.reg, opsize)};
+        x64_Operand op2 = (x64_Operand) {0};
+        if (m.mem_is_register) op2 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.mem, opsize)}; else op2 = (x64_Operand) {.kind = 3, .reg = reg_from_index(m.mem, adsize), .index = reg_from_index(m.idx, adsize), .scale = m.scale, .imm_value = (int64)m.disp};
+        inst->dst_operand = op1;
+        inst->src_operand = op2;
+    }
+    /* local procedure */;
+    uint32 imm_size = x64_opcode_immediate[opcode];
+    uint32 imm_bytes = bytesize(imm_size, opsize);
+    return (ptr + 1);
+}
+static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
+    byte mod_reg_rm = *ptr;
+    byte mod = ((mod_reg_rm & 192) >> 6);
+    byte reg = ((mod_reg_rm & 56) >> 3);
+    byte rm = ((mod_reg_rm & 7) >> 0);
+    *m = (ModRM_SIB_disp) {.reg = reg, .mem = rm};
+    uint32 disp_bytes = 0;
+    switch (mod) {
+        case 0:;
+        {
+            if (rm == 5) {
+                disp_bytes = 4;
+                m->mem = -1;
+            }
+        }
+        break;
+        case 1:;
+        disp_bytes = 1;
+        break;
+        case 2:;
+        disp_bytes = 4;
+        break;
+        case 3:;
+        {
+            m->mem_is_register = 1;
+            return (ptr + 1);
+        }
+        break;
+    }
+    if (rm == 4) {
+        byte sib = *(++ptr);
+        byte ss = ((sib & 192) >> 6);
+        byte index = ((sib & 56) >> 3);
+        byte base = ((sib & 7) >> 0);
+        m->scale = (1 << ss);
+        if (index == 4) m->scale = 0;
+        m->mem = base;
+        m->idx = index;
+    }
+    switch (disp_bytes) {
+        case 0:;
+        break;
+        case 1:;
+        m->disp = (int32)*(++ptr);
+        break;
+        case 4:;
+        m->disp = (int32)*((uint32*)++ptr);
+        ptr += (4 - 1);
+        break;
+        default:;
+        break;
+    }
+    return (ptr + 1);
+}
+static void stringify_overload1(x64_Instruction inst, StringBuilder* sb) {
+    char* opr = to_string_overload9(inst.operation);
+    sb_append_overload1(sb, opr);
+    sb_append_overload1(sb, " ");
+    stringify_overload2(inst.dst_operand, sb);
+    sb_append_overload1(sb, ", ");
+    stringify_overload2(inst.src_operand, sb);
+}
+static void stringify_overload2(x64_Operand op, StringBuilder* sb) {
+    switch (op.kind) {
+        case 0:;
+        break;
+        case 1:;
+        sb_append_overload2(sb, to_string_overload4(op.imm_value));
+        break;
+        case 2:;
+        sb_append_overload1(sb, to_string_overload10(op.reg));
+        break;
+        case 3:;
+        sb_append_overload1(sb, "ptr [");
+        sb_append_overload1(sb, to_string_overload10(op.reg));
+        sb_append_overload1(sb, "]");
+        break;
+    }
+}
+static void test(char* code, char* str) {
+    x64_Instruction inst = (x64_Instruction) {0};
+    decode_instruction(code, &inst);
+    StringBuilder* sb = temp_builder();
+    stringify_overload1(inst, sb);
+    uint32 l = strlen(str);
+    printf("%s", str);
+    for (int32 it = 0; it < (50 - l); it++) printf("%s", " ");
+    printf("%.*s%s", to_string_overload8(sb).length, to_string_overload8(sb).chars, "\n");
+}
+static void run_tests() {
+    /* local procedure */;
+    test("\x03\x07", "add eax, dword ptr [rdi]");
+    test("\x67\x48\x01\x38", "add qword ptr [eax], rdi");
+    test("\xC7\x84\x24\xD4\x00\x00\x00\x00\x00\x00\x00", "mov dword ptr [rsp + 0xd4], 0x0");
+    printf("%s", "Grp11 - MOV 0xC7\n");
+    test("\xc7\x00\x10\x00\x00\x00", "mov dword ptr [rax], 0x10");
+    test("\xc7\x40\x01\x10\x00\x00\x00", "mov dword ptr [rax + 0x1], 0x10");
+    test("\xc7\x04\x18\x10\x00\x00\x00", "mov dword ptr [rax + rbx*1], 0x10");
+    test("\xc7\x44\x18\x01\x10\x00\x00\x00", "mov dword ptr [rax + rbx*1 + 0x1], 0x10");
+    test("\xc7\x44\x58\x01\x10\x00\x00\x00", "mov dword ptr [rax + rbx*2 + 0x1], 0x10");
+    printf("%s", "Grp11 - MOV 0xC6\n");
+    test("\xc6\x00\x10", "mov byte ptr [rax], 0x10");
+    test("\xc6\x40\x01\x10", "mov byte ptr [rax + 0x1], 0x10");
+    test("\xc6\x04\x18\x10", "mov byte ptr [rax + rbx*1], 0x10");
+    test("\xc6\x44\x18\x01\x10", "mov byte ptr [rax + rbx*1 + 0x1], 0x10");
+    test("\xc6\x44\x58\x01\x10", "mov byte ptr [rax + rbx*2 + 0x1], 0x10");
+    printf("%s", "\n");
+    test("\x00\xd8", "add al, bl");
+    test("\x48\x01\xe0", "add rax, rsp");
+    test("\x01\xe0", "add eax, esp");
+    test("\x02\x00", "add al, byte ptr [rax]");
+    test("\x03\x00", "add eax, dword ptr [rax]");
+    test("\x04\x10", "add al, 0x10");
+    test("\x66\x05\x00\x10", "add ax, 0x1000");
+    test("\x05\x00\x10\x00\x00", "add eax, 0x1000");
+    test("\x10\xd8", "adc al, bl");
+    test("\x48\x11\xe0", "adc rax, rsp");
+    test("\x11\xe0", "adc eax, esp");
+    test("\x12\x00", "adc al, byte ptr [rax]");
+    test("\x13\x00", "adc eax, dword ptr [rax]");
+    test("\x14\x10", "adc al, 0x10");
+    test("\x66\x15\x00\x10", "adc ax, 0x1000");
+    test("\x15\x00\x10\x00\x00", "adc eax, 0x1000");
+    test("\x20\xd8", "and al, bl");
+    test("\x48\x21\xe0", "and rax, rsp");
+    test("\x21\xe0", "and eax, esp");
+    test("\x22\x00", "and al, byte ptr [rax]");
+    test("\x23\x00", "and eax, dword ptr [rax]");
+    test("\x24\x10", "and al, 0x10");
+    test("\x66\x25\x00\x10", "and ax, 0x1000");
+    test("\x25\x00\x10\x00\x00", "and eax, 0x1000");
+    test("\x30\xd8", "xor al, bl");
+    test("\x48\x31\xe0", "xor rax, rsp");
+    test("\x31\xe0", "xor eax, esp");
+    test("\x32\x00", "xor al, byte ptr [rax]");
+    test("\x33\x00", "xor eax, dword ptr [rax]");
+    test("\x34\x10", "xor al, 0x10");
+    test("\x66\x35\x00\x10", "xor ax, 0x1000");
+    test("\x35\x00\x10\x00\x00", "xor eax, 0x1000");
+    test("\x08\xd8", "or al, bl");
+    test("\x48\x09\xe0", "or rax, rsp");
+    test("\x09\xe0", "or eax, esp");
+    test("\x0a\x00", "or al, byte ptr [rax]");
+    test("\x0b\x00", "or eax, dword ptr [rax]");
+    test("\x0c\x10", "or al, 0x10");
+    test("\x66\x0d\x00\x10", "or ax, 0x1000");
+    test("\x0d\x00\x10\x00\x00", "or eax, 0x1000");
+    test("\x18\xd8", "sbb al, bl");
+    test("\x48\x19\xe0", "sbb rax, rsp");
+    test("\x19\xe0", "sbb eax, esp");
+    test("\x1a\x00", "sbb al, byte ptr [rax]");
+    test("\x1b\x00", "sbb eax, dword ptr [rax]");
+    test("\x1c\x10", "sbb al, 0x10");
+    test("\x66\x1d\x00\x10", "sbb ax, 0x1000");
+    test("\x1d\x00\x10\x00\x00", "sbb eax, 0x1000");
+    test("\x28\xd8", "sub al, bl");
+    test("\x48\x29\xe0", "sub rax, rsp");
+    test("\x29\xe0", "sub eax, esp");
+    test("\x2a\x00", "sub al, byte ptr [rax]");
+    test("\x2b\x00", "sub eax, dword ptr [rax]");
+    test("\x2c\x10", "sub al, 0x10");
+    test("\x66\x2d\x00\x10", "sub ax, 0x1000");
+    test("\x2d\x00\x10\x00\x00", "sub eax, 0x1000");
+    test("\x38\xd8", "cmp al, bl");
+    test("\x48\x39\xe0", "cmp rax, rsp");
+    test("\x39\xe0", "cmp eax, esp");
+    test("\x3a\x00", "cmp al, byte ptr [rax]");
+    test("\x3b\x00", "cmp eax, dword ptr [rax]");
+    test("\x3c\x10", "cmp al, 0x10");
+    test("\x66\x3d\x00\x10", "cmp ax, 0x1000");
+    test("\x3d\x00\x10\x00\x00", "cmp eax, 0x1000");
+    printf("%s", "Grp1 - Immediates\n");
+    test("\x80\xc1\xff", "add cl, 0xff");
+    test("\x81\xc2\x00\x10\x00\x10", "add edx, 0x10001000");
+    test("\x83\xc3\x01", "add ebx, 0x1");
+    test("\x80\xc9\xff", "or cl, 0xff");
+    test("\x81\xca\x00\x10\x00\x10", "or edx, 0x10001000");
+    test("\x83\xcb\x01", "or ebx, 0x1");
+    test("\x80\xd1\xff", "adc cl, 0xff");
+    test("\x81\xd2\x00\x10\x00\x10", "adc edx, 0x10001000");
+    test("\x83\xd3\x01", "adc ebx, 0x1");
+    test("\x80\xd9\xff", "sbb cl, 0xff");
+    test("\x81\xda\x00\x10\x00\x10", "sbb edx, 0x10001000");
+    test("\x83\xdb\x01", "sbb ebx, 0x1");
+    test("\x80\xe1\xff", "and cl, 0xff");
+    test("\x81\xe2\x00\x10\x00\x10", "and edx, 0x10001000");
+    test("\x83\xe3\x01", "and ebx, 0x1");
+    test("\x80\xe9\xff", "sub cl, 0xff");
+    test("\x81\xea\x00\x10\x00\x10", "sub edx, 0x10001000");
+    test("\x83\xeb\x01", "sub ebx, 0x1");
+    test("\x80\xf1\xff", "xor cl, 0xff");
+    test("\x81\xf2\x00\x10\x00\x10", "xor edx, 0x10001000");
+    test("\x83\xf3\x01", "xor ebx, 0x1");
+    test("\x80\xf9\xff", "cmp cl, 0xff");
+    test("\x81\xfa\x00\x10\x00\x10", "cmp edx, 0x10001000");
+    test("\x83\xfb\x01", "cmp ebx, 0x1");
+    printf("%s", "Interupts\n");
+    test("\xcc", "int3");
+    test("\xcd\x01", "int 0x1");
+    printf("%s", "test instruction\n");
+    test("\xa8\x12", "test al, 0x12");
+    test("\x66\xa9\x00\x10", "test ax, 0x1000");
+    test("\xa9\x00\x10\x00\x00", "test eax, 0x1000");
+    test("\x48\xa9\x00\x10\x00\x00", "test rax, 0x1000");
+    printf("%s", "MOV immediate byte into byte register - 0xB0 to 0xB7\n");
+    test("\xb0\x0a", "mov al, 0xa");
+    test("\xb1\x0b", "mov cl, 0xb");
+    test("\xb2\x0c", "mov dl, 0xc");
+    test("\xb3\x0d", "mov bl, 0xd");
+    test("\xb4\x0e", "mov ah, 0xe");
+    test("\xb5\x0f", "mov ch, 0xf");
+    test("\xb6\xab", "mov dh, 0xab");
+    test("\xb7\xcd", "mov bh, 0xcd");
+    test("\x41\xb0\x0a", "mov r8b, 0xa");
+    test("\x41\xb1\x0b", "mov r9b, 0xb");
+    test("\x41\xb2\x0c", "mov r10b, 0xc");
+    test("\x41\xb3\x0d", "mov r11b, 0xd");
+    test("\x41\xb4\x0e", "mov r12b, 0xe");
+    test("\x41\xb5\x0f", "mov r13b, 0xf");
+    test("\x41\xb6\xab", "mov r14b, 0xab");
+    test("\x41\xb7\xcd", "mov r15b, 0xcd");
+    printf("%s", "MOV immediate into register - 0xB8 to 0xBF\n");
+    test("\xb8\x0a\x00\x00\x00", "mov eax, 0xa");
+    test("\xb9\x0b\x00\x00\x00", "mov ecx, 0xb");
+    test("\xba\x0c\x00\x00\x00", "mov edx, 0xc");
+    test("\xbb\x0d\x00\x00\x00", "mov ebx, 0xd");
+    test("\xbc\x0e\x00\x00\x00", "mov esp, 0xe");
+    test("\xbd\x0f\x00\x00\x00", "mov ebp, 0xf");
+    test("\xbe\xab\x00\x00\x00", "mov esi, 0xab");
+    test("\xbf\xcd\x00\x00\x00", "mov edi, 0xcd");
+    test("\x41\xb8\x0a\x00\x00\x00", "mov r8d, 0xa");
+    test("\x41\xb9\x0b\x00\x00\x00", "mov r9d, 0xb");
+    test("\x41\xba\x0c\x00\x00\x00", "mov r10d, 0xc");
+    test("\x41\xbb\x0d\x00\x00\x00", "mov r11d, 0xd");
+    test("\x41\xbc\x0e\x00\x00\x00", "mov r12d, 0xe");
+    test("\x41\xbd\x0f\x00\x00\x00", "mov r13d, 0xf");
+    test("\x41\xbe\xab\x00\x00\x00", "mov r14d, 0xab");
+    test("\x41\xbf\xcd\x00\x00\x00", "mov r15d, 0xcd");
+    test("\x49\xb8\x00\x0a\x00\x00\x00\x00\x00\x00", "mov r8, 0xa00");
+    test("\x49\xb9\x00\x0b\x00\x00\x00\x00\x00\x00", "mov r9, 0xb00");
+    test("\x49\xba\x00\x0c\x00\x00\x00\x00\x00\x00", "mov r10, 0xc00");
+    test("\x49\xbb\x00\x0d\x00\x00\x00\x00\x00\x00", "mov r11, 0xd00");
+    test("\x49\xbc\x00\x0e\x00\x00\x00\x00\x00\x00", "mov r12, 0xe00");
+    test("\x49\xbd\x00\x0f\x00\x00\x00\x00\x00\x00", "mov r13, 0xf00");
+    test("\x49\xbe\x00\xab\x00\x00\x00\x00\x00\x00", "mov r14, 0xab00");
+    test("\x49\xbf\x00\xcd\x00\x00\x00\x00\x00\x00", "mov r15, 0xcd00");
+    printf("%s", "XCHG - 0x86, 0x87\n");
+    test("\x86\xE9", "xchg cl, ch");
+    test("\x86\x63\x01", "xchg byte ptr [rbx + 0x1], ah");
+    test("\x4D\x87\xC8", "xchg r8, r9");
+    test("\x87\x08", "xchg dword ptr [rax], ecx");
+    test("\x67\x87\x4C\xD0\x0F", "xchg dword ptr [eax + edx*8 + 0xf], ecx");
+    printf("%s", "XCHG eax - 0x91 to 0x97\n");
+    test("\x91", "xchg eax, ecx");
+    test("\x92", "xchg eax, edx");
+    test("\x93", "xchg eax, ebx");
+    test("\x94", "xchg eax, esp");
+    test("\x95", "xchg eax, ebp");
+    test("\x96", "xchg eax, esi");
+    test("\x97", "xchg eax, edi");
+    test("\x41\x90", "xchg eax, r8d");
+    test("\x41\x91", "xchg eax, r9d");
+    test("\x41\x92", "xchg eax, r10d");
+    test("\x41\x93", "xchg eax, r11d");
+    test("\x41\x94", "xchg eax, r12d");
+    test("\x41\x95", "xchg eax, r13d");
+    test("\x41\x96", "xchg eax, r14d");
+    test("\x41\x97", "xchg eax, r15d");
+    printf("%s", "XCHG rax - 0x91 to 0x97\n");
+    test("\x48\x91", "xchg rax, rcx");
+    test("\x48\x92", "xchg rax, rdx");
+    test("\x48\x93", "xchg rax, rbx");
+    test("\x48\x94", "xchg rax, rsp");
+    test("\x48\x95", "xchg rax, rbp");
+    test("\x48\x96", "xchg rax, rsi");
+    test("\x48\x97", "xchg rax, rdi");
+    test("\x49\x90", "xchg rax, r8");
+    test("\x49\x91", "xchg rax, r9");
+    test("\x49\x92", "xchg rax, r10");
+    test("\x49\x93", "xchg rax, r11");
+    test("\x49\x94", "xchg rax, r12");
+    test("\x49\x95", "xchg rax, r13");
+    test("\x49\x96", "xchg rax, r14");
+    test("\x49\x97", "xchg rax, r15");
+    printf("%s", "XCHG ax - 0x91 to 0x97\n");
+    test("\x66\x90", "xchg ax, ax");
+    test("\x66\x91", "xchg ax, cx");
+    test("\x66\x92", "xchg ax, dx");
+    test("\x66\x93", "xchg ax, bx");
+    test("\x66\x94", "xchg ax, sp");
+    test("\x66\x95", "xchg ax, bp");
+    test("\x66\x96", "xchg ax, si");
+    test("\x66\x97", "xchg ax, di");
+    test("\x66\x41\x90", "xchg ax, r8w");
+    test("\x66\x41\x91", "xchg ax, r9w");
+    test("\x66\x41\x92", "xchg ax, r10w");
+    test("\x66\x41\x93", "xchg ax, r11w");
+    test("\x66\x41\x94", "xchg ax, r12w");
+    test("\x66\x41\x95", "xchg ax, r13w");
+    test("\x66\x41\x96", "xchg ax, r14w");
+    test("\x66\x41\x97", "xchg ax, r15w");
+    printf("%s", "call\n");
+    test("\xe8\x10\x00\x00\x00", "call 0x10");
 }
 static void __static_init() {
     temps = alloc_temp_builders(8);

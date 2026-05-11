@@ -85,7 +85,7 @@ struct Image_Optional_Header_64 {
     uint64 SizeOfHeapCommit;
     uint32 LoaderFlags;
     uint32 NumberOfRvaAndSizes;
-    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
+    // IMAGE_DATA_DIRECTORY[IMAGE_NUMBEROF_DIRECTORY_ENTRIES] DataDirectory;
 }
 
 

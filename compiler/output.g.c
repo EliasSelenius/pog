@@ -222,6 +222,7 @@ struct x64_Operand { // deps = 0
     x64_Register index;
     uint32 scale;
     int64 imm_value;
+    uint32 bytesize;
 };
 struct ModRM_SIB_disp { // deps = 0
     byte reg;
@@ -241,6 +242,10 @@ struct Pog_TokenData { // deps = 1
     uint64 integer;
     float64 decimal;
     char character;
+};
+struct x64_Instruction { // deps = 1
+    x64_Operation operation;
+    x64_Operand operands[4];
 };
 struct Procedure { // deps = 2
     string name;
@@ -263,11 +268,6 @@ struct Image_Nt_Headers { // deps = 2
     uint32 signature;
     COFF_File_Header file_header;
     Image_Optional_Header_64 optional_header;
-};
-struct x64_Instruction { // deps = 2
-    x64_Operation operation;
-    x64_Operand dst_operand;
-    x64_Operand src_operand;
 };
 struct WIN32_FIND_DATAW { // deps = 3
     uint32 dwFileAttributes;
@@ -926,29 +926,29 @@ static TypeInfo rtti_types[] = {
     {
         .name = "x64_Instruction",
         .inner_type = 0,
-        .bytesize = 56,
+        .bytesize = 8,
         .alignment = 8,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 3, .data = (StructField[]){
+        .fields = (Array) { .length = 2, .data = (StructField[]){
             {.type_info = (rtti_types+52), .name = "operation", .offset = 0},
-            {.type_info = (rtti_types+46), .name = "dst_operand", .offset = 8},
-            {.type_info = (rtti_types+46), .name = "src_operand", .offset = 32},
+            {.type_info = (rtti_types+0), .name = "operands", .offset = 8},
         }},
     },
     {
         .name = "x64_Operand",
         .inner_type = 0,
-        .bytesize = 24,
+        .bytesize = 28,
         .alignment = 8,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 5, .data = (StructField[]){
+        .fields = (Array) { .length = 6, .data = (StructField[]){
             {.type_info = (rtti_types+54), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+53), .name = "reg", .offset = 4},
             {.type_info = (rtti_types+53), .name = "index", .offset = 8},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
             {.type_info = (rtti_types+3), .name = "imm_value", .offset = 16},
+            {.type_info = (rtti_types+6), .name = "bytesize", .offset = 24},
         }},
     },
     {
@@ -1223,48 +1223,48 @@ static TypeInfo rtti_types[] = {
         .kind = 17,
         .num_ptr = 0,
         .entries = (Array) { .length = 42, .data = (EnumEntry[]){
-            {.name = "NONE", .value = 0},
-            {.name = "ADD", .value = 1},
-            {.name = "OR", .value = 2},
-            {.name = "ADC", .value = 3},
-            {.name = "SBB", .value = 4},
-            {.name = "AND", .value = 5},
-            {.name = "SUB", .value = 6},
-            {.name = "XOR", .value = 7},
-            {.name = "CMP", .value = 8},
-            {.name = "REX", .value = 9},
-            {.name = "PUSH", .value = 10},
-            {.name = "POP", .value = 11},
-            {.name = "MOVSXD", .value = 12},
-            {.name = "IMUL", .value = 13},
+            {.name = "none", .value = 0},
+            {.name = "add", .value = 1},
+            {.name = "or", .value = 2},
+            {.name = "adc", .value = 3},
+            {.name = "sbb", .value = 4},
+            {.name = "and", .value = 5},
+            {.name = "sub", .value = 6},
+            {.name = "xor", .value = 7},
+            {.name = "cmp", .value = 8},
+            {.name = "rex", .value = 9},
+            {.name = "push", .value = 10},
+            {.name = "pop", .value = 11},
+            {.name = "movsxd", .value = 12},
+            {.name = "imul", .value = 13},
             {.name = "Jcc", .value = 14},
-            {.name = "TEST", .value = 15},
-            {.name = "XCHG", .value = 16},
-            {.name = "MOV", .value = 17},
-            {.name = "LEA", .value = 18},
-            {.name = "SHAF", .value = 19},
-            {.name = "LAHF", .value = 20},
-            {.name = "RET", .value = 21},
-            {.name = "ENTER", .value = 22},
-            {.name = "LEAVE", .value = 23},
-            {.name = "INT3", .value = 24},
-            {.name = "INT", .value = 25},
-            {.name = "ESC", .value = 26},
-            {.name = "LOOP", .value = 27},
-            {.name = "IN", .value = 28},
-            {.name = "OUT", .value = 29},
-            {.name = "CALL", .value = 30},
-            {.name = "JMP", .value = 31},
-            {.name = "INT1", .value = 32},
-            {.name = "HLT", .value = 33},
-            {.name = "CMC", .value = 34},
-            {.name = "CLC", .value = 35},
-            {.name = "STC", .value = 36},
-            {.name = "CLI", .value = 37},
-            {.name = "STI", .value = 38},
-            {.name = "CLD", .value = 39},
-            {.name = "STD", .value = 40},
-            {.name = "PREFIX", .value = 41},
+            {.name = "test", .value = 15},
+            {.name = "xchg", .value = 16},
+            {.name = "mov", .value = 17},
+            {.name = "lea", .value = 18},
+            {.name = "shaf", .value = 19},
+            {.name = "lahf", .value = 20},
+            {.name = "ret", .value = 21},
+            {.name = "enter", .value = 22},
+            {.name = "leave", .value = 23},
+            {.name = "int3", .value = 24},
+            {.name = "int", .value = 25},
+            {.name = "esc", .value = 26},
+            {.name = "loop", .value = 27},
+            {.name = "in", .value = 28},
+            {.name = "out", .value = 29},
+            {.name = "call", .value = 30},
+            {.name = "jmp", .value = 31},
+            {.name = "int1", .value = 32},
+            {.name = "hlt", .value = 33},
+            {.name = "cmc", .value = 34},
+            {.name = "clc", .value = 35},
+            {.name = "stc", .value = 36},
+            {.name = "cli", .value = 37},
+            {.name = "sti", .value = 38},
+            {.name = "cld", .value = 39},
+            {.name = "std", .value = 40},
+            {.name = "prefix", .value = 41},
         }},
     },
     {
@@ -1524,7 +1524,7 @@ static char* concat_overload6(string a, string b, string c);
 static char* concat_overload7(char* a, string b, char* c);
 static StringBuilder sb_create();
 static void sb_free(StringBuilder sb);
-static void sb_grow(StringBuilder* sb, uint32 len);
+static char* sb_grow(StringBuilder* sb, uint32 len);
 static void ensure_size(StringBuilder* sb, uint32 size);
 static void sb_append_overload1(StringBuilder* sb, char* str);
 static void sb_append_overload2(StringBuilder* sb, string str);
@@ -1862,19 +1862,25 @@ static void read_exe(char* filename);
 static char* to_string_overload9(x64_Operation op);
 static char* to_string_overload10(x64_Register reg);
 static x64_Register reg_from_index(byte index, uint32 bytesize);
-static byte* decode_instruction(byte* start_ptr, x64_Instruction* inst);
+static byte* decode_instruction(byte* ptr, x64_Instruction* inst);
+static uint64 read_unsigned_imm(byte** pptr, uint32 size);
 static byte* modrm(byte* ptr, ModRM_SIB_disp* m);
-static void stringify_overload1(x64_Instruction inst, StringBuilder* sb);
-static void stringify_overload2(x64_Operand op, StringBuilder* sb);
+static string stringify_overload1(x64_Instruction inst, StringBuilder* sb);
+static char hex_nibble(byte val);
+static string hex_overload1(uint64 val);
+static string hex_overload2(uint64 val, StringBuilder* sb);
+static string stringify_overload2(x64_Operand op, StringBuilder* sb);
 static void run_tests();
 
 // Declarations
 static Array pog_all_ops = (Array) { .length = 6, .data = (Array[]){(Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {23, 13}, (Pog_Binary_Op) {24, 14}}}, (Array) { .length = 6, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {60, 7}, (Pog_Binary_Op) {61, 8}, (Pog_Binary_Op) {62, 9}, (Pog_Binary_Op) {63, 10}, (Pog_Binary_Op) {64, 11}, (Pog_Binary_Op) {65, 12}}}, (Array) { .length = 1, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {42, 6}}}, (Array) { .length = 5, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {49, 15}, (Pog_Binary_Op) {50, 16}, (Pog_Binary_Op) {51, 17}, (Pog_Binary_Op) {52, 18}, (Pog_Binary_Op) {53, 19}}}, (Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {67, 1}, (Pog_Binary_Op) {68, 2}}}, (Array) { .length = 3, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {69, 3}, (Pog_Binary_Op) {70, 4}, (Pog_Binary_Op) {71, 5}}}}};
 static x64_Operation x64_opcode_operation[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 41, 0, 6, 6, 6, 6, 6, 6, 41, 0, 7, 7, 7, 7, 7, 7, 41, 0, 8, 8, 8, 8, 8, 8, 41, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 41, 41, 41, 41, 10, 13, 10, 13, 0, 0, 0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 41, 32, 41, 41, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
 static byte x64_opcode_modrm[256] = {1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-static byte x64_opcode_immediate[256] = {0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static byte x64_opcode_immediate[256] = {0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static StringBuilder* temps;
 static uint32 rotation = 0;
+static uint32 total_test_count = 0;
+static uint32 total_failed = 0;
 
 // Implementations
 void __main() {
@@ -2199,7 +2205,7 @@ static string to_string_overload4(int64 num) {
         sb_append_overload3(sb, '-');
         num = -num;
     }
-    sb_append_overload2(sb, to_string_overload5((uint64)num));
+    sb_append_overload2(sb, to_string_overload2((uint64)num));
     return to_string_overload8(sb);
 }
 static string to_string_overload5(float32 f) {
@@ -2480,13 +2486,14 @@ static StringBuilder sb_create() {
 static void sb_free(StringBuilder sb) {
     free(sb.content);
 }
-static void sb_grow(StringBuilder* sb, uint32 len) {
-    len += sb->length;
-    if (sb->capacity <= len) {
+static char* sb_grow(StringBuilder* sb, uint32 len) {
+    uint32 req_cap = (sb->length + len);
+    if (sb->capacity <= req_cap) {
         sb->capacity *= 2;
-        while (sb->capacity <= len) sb->capacity *= 2;
+        while (sb->capacity <= req_cap) sb->capacity *= 2;
         sb->content = realloc(sb->content, sb->capacity);
     }
+    return (sb->content + sb->length);
 }
 static void ensure_size(StringBuilder* sb, uint32 size) {
     if (sb->capacity < size) {
@@ -2617,25 +2624,25 @@ static int32 min_overload1(int32 a, int32 b) {
     return (a < b) ? a : b;
 }
 static ivec2 min_overload2(ivec2 a, ivec2 b) {
-    return (ivec2) {min_overload6(a.x, b.x), min_overload6(a.y, b.y)};
+    return (ivec2) {min_overload1(a.x, b.x), min_overload1(a.y, b.y)};
 }
 static ivec3 min_overload3(ivec3 a, ivec3 b) {
-    return (ivec3) {min_overload6(a.x, b.x), min_overload6(a.y, b.y), min_overload6(a.z, b.z)};
+    return (ivec3) {min_overload1(a.x, b.x), min_overload1(a.y, b.y), min_overload1(a.z, b.z)};
 }
 static ivec4 min_overload4(ivec4 a, ivec4 b) {
-    return (ivec4) {min_overload6(a.x, b.x), min_overload6(a.y, b.y), min_overload6(a.z, b.z), min_overload6(a.w, b.w)};
+    return (ivec4) {min_overload1(a.x, b.x), min_overload1(a.y, b.y), min_overload1(a.z, b.z), min_overload1(a.w, b.w)};
 }
 static int32 max_overload1(int32 a, int32 b) {
     return (a < b) ? b : a;
 }
 static ivec2 max_overload2(ivec2 a, ivec2 b) {
-    return (ivec2) {max_overload6(a.x, b.x), max_overload6(a.y, b.y)};
+    return (ivec2) {max_overload1(a.x, b.x), max_overload1(a.y, b.y)};
 }
 static ivec3 max_overload3(ivec3 a, ivec3 b) {
-    return (ivec3) {max_overload6(a.x, b.x), max_overload6(a.y, b.y), max_overload6(a.z, b.z)};
+    return (ivec3) {max_overload1(a.x, b.x), max_overload1(a.y, b.y), max_overload1(a.z, b.z)};
 }
 static ivec4 max_overload4(ivec4 a, ivec4 b) {
-    return (ivec4) {max_overload6(a.x, b.x), max_overload6(a.y, b.y), max_overload6(a.z, b.z), max_overload6(a.w, b.w)};
+    return (ivec4) {max_overload1(a.x, b.x), max_overload1(a.y, b.y), max_overload1(a.z, b.z), max_overload1(a.w, b.w)};
 }
 static uint32 min_overload5(uint32 a, uint32 b) {
     return (a < b) ? a : b;
@@ -2912,13 +2919,13 @@ static vec4 abs_overload6(vec4 v) {
     return (vec4) {abs_overload1(v.x), abs_overload1(v.y), abs_overload1(v.z), abs_overload1(v.w)};
 }
 static ivec2 abs_overload7(ivec2 v) {
-    return (ivec2) {abs_overload1(v.x), abs_overload1(v.y)};
+    return (ivec2) {abs_overload3(v.x), abs_overload3(v.y)};
 }
 static ivec3 abs_overload8(ivec3 v) {
-    return (ivec3) {abs_overload1(v.x), abs_overload1(v.y), abs_overload1(v.z)};
+    return (ivec3) {abs_overload3(v.x), abs_overload3(v.y), abs_overload3(v.z)};
 }
 static ivec4 abs_overload9(ivec4 v) {
-    return (ivec4) {abs_overload1(v.x), abs_overload1(v.y), abs_overload1(v.z), abs_overload1(v.w)};
+    return (ivec4) {abs_overload3(v.x), abs_overload3(v.y), abs_overload3(v.z), abs_overload3(v.w)};
 }
 static vec2 sub_overload1(vec2 a, vec2 b) {
     return (vec2) {(a.x - b.x), (a.y - b.y)};
@@ -4858,7 +4865,7 @@ static char* to_string_overload9(x64_Operation op) {
         case 13:;
         return "imul";
         case 14:;
-        return "jcc";
+        return "Jcc";
         case 15:;
         return "test";
         case 16:;
@@ -4948,11 +4955,11 @@ static uint32 bytesize(uint32 size_selector, uint32 opsize) {
         return (opsize <= 4) ? opsize : 4;
     }
 }
-static byte* decode_instruction(byte* start_ptr, x64_Instruction* inst) {
+static byte* decode_instruction(byte* ptr, x64_Instruction* inst) {
     *inst = (x64_Instruction) {0};
+    uint32 operand_count = 0;
     uint32 opsize = 4;
     uint32 adsize = 8;
-    byte* ptr = start_ptr;
     switch (*ptr) {
         case 100:;
         ptr++;
@@ -4969,41 +4976,67 @@ static byte* decode_instruction(byte* start_ptr, x64_Instruction* inst) {
         adsize = 4;
         break;
     }
-    byte opcode = *ptr;
+    byte opcode = *ptr++;
     x64_Operation op = x64_opcode_operation[opcode];
     byte bit_ext_reg = 0;
     byte bit_ext_idx = 0;
     byte bit_ext_mem = 0;
     if (op == 9) {
         if (opcode & 8) opsize = 8;
-        bit_ext_reg = ((*ptr & 4) << 1);
-        bit_ext_idx = ((*ptr & 2) << 2);
-        bit_ext_mem = ((*ptr & 1) << 3);
-        ptr++;
-        opcode = *ptr;
+        bit_ext_reg = ((opcode & 4) << 1);
+        bit_ext_idx = ((opcode & 2) << 2);
+        bit_ext_mem = ((opcode & 1) << 3);
+        opcode = *ptr++;
         op = x64_opcode_operation[opcode];
     }
     inst->operation = op;
+    byte opcode_reg = (bit_ext_reg | (opcode & 7));
     byte modrm_byte_present = x64_opcode_modrm[opcode];
     if (modrm_byte_present) {
         ModRM_SIB_disp m = (ModRM_SIB_disp) {0};
-        ptr = modrm(++ptr, &m);
+        ptr = modrm(ptr, &m);
         m.reg |= bit_ext_reg;
         m.idx |= bit_ext_idx;
         m.mem |= bit_ext_mem;
         x64_Operand op1 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.reg, opsize)};
         x64_Operand op2 = (x64_Operand) {0};
-        if (m.mem_is_register) op2 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.mem, opsize)}; else op2 = (x64_Operand) {.kind = 3, .reg = reg_from_index(m.mem, adsize), .index = reg_from_index(m.idx, adsize), .scale = m.scale, .imm_value = (int64)m.disp};
-        inst->dst_operand = op1;
-        inst->src_operand = op2;
+        if (m.mem_is_register) op2 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.mem, opsize), .bytesize = opsize}; else op2 = (x64_Operand) {.kind = 3, .reg = reg_from_index(m.mem, adsize), .index = reg_from_index(m.idx, adsize), .scale = m.scale, .imm_value = (int64)m.disp, .bytesize = opsize};
+        inst->operands[operand_count++] = op1;
+        inst->operands[operand_count++] = op2;
     }
     /* local procedure */;
     uint32 imm_size = x64_opcode_immediate[opcode];
     uint32 imm_bytes = bytesize(imm_size, opsize);
-    return (ptr + 1);
+    if (imm_bytes) {
+        uint64 imm = read_unsigned_imm(&ptr, imm_bytes);
+        inst->operands[operand_count++] = (x64_Operand) {.kind = 1, .imm_value = imm, .bytesize = imm_bytes};
+    }
+    return ptr;
+}
+static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
+    byte* ptr = *pptr;
+    switch (size) {
+        default:;
+        case 0:;
+        break;
+        case 1:;
+        (*pptr) += 1;
+        return (uint64)*((uint8*)ptr);
+        case 2:;
+        (*pptr) += 2;
+        return (uint64)*((uint16*)ptr);
+        case 4:;
+        (*pptr) += 4;
+        return (uint64)*((uint32*)ptr);
+        case 8:;
+        (*pptr) += 8;
+        return (uint64)*((uint64*)ptr);
+    }
+    assert(0);
+    return 0;
 }
 static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
-    byte mod_reg_rm = *ptr;
+    byte mod_reg_rm = *ptr++;
     byte mod = ((mod_reg_rm & 192) >> 6);
     byte reg = ((mod_reg_rm & 56) >> 3);
     byte rm = ((mod_reg_rm & 7) >> 0);
@@ -5027,12 +5060,11 @@ static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
         case 3:;
         {
             m->mem_is_register = 1;
-            return (ptr + 1);
+            return ptr;
         }
-        break;
     }
     if (rm == 4) {
-        byte sib = *(++ptr);
+        byte sib = *ptr++;
         byte ss = ((sib & 192) >> 6);
         byte index = ((sib & 56) >> 3);
         byte base = ((sib & 7) >> 0);
@@ -5045,266 +5077,314 @@ static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
         case 0:;
         break;
         case 1:;
-        m->disp = (int32)*(++ptr);
+        m->disp = (int32)*ptr++;
         break;
         case 4:;
-        m->disp = (int32)*((uint32*)++ptr);
-        ptr += (4 - 1);
+        m->disp = (int32)*((uint32*)ptr);
+        ptr += 4;
         break;
         default:;
         break;
     }
-    return (ptr + 1);
+    return ptr;
 }
-static void stringify_overload1(x64_Instruction inst, StringBuilder* sb) {
+static string stringify_overload1(x64_Instruction inst, StringBuilder* sb) {
     char* opr = to_string_overload9(inst.operation);
     sb_append_overload1(sb, opr);
-    sb_append_overload1(sb, " ");
-    stringify_overload2(inst.dst_operand, sb);
-    sb_append_overload1(sb, ", ");
-    stringify_overload2(inst.src_operand, sb);
+    for (int32 it = 0; it < 4; it++) {
+        x64_Operand op = inst.operands[it];
+        if (op.kind == 0) break;
+        sb_append_overload1(sb, (it == 0) ? " " : ", ");
+        stringify_overload2(op, sb);
+    }
+    return to_string_overload8(sb);
 }
-static void stringify_overload2(x64_Operand op, StringBuilder* sb) {
+static char hex_nibble(byte val) {
+    Array digits = (Array) { .length = 16, .data = (char[]){'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'}};
+    return ((char*)digits.data)[(val & 15)];
+}
+static string hex_overload1(uint64 val) {
+    return hex_overload2(val, temp_builder());
+}
+static string hex_overload2(uint64 val, StringBuilder* sb) {
+    int32 it = 7;
+    while (it >= 0) {
+        byte b = (byte)((val >> (8 * it)) & 255);
+        char lo = hex_nibble((b & 15));
+        char hi = hex_nibble((b >> 4));
+        sb_append_overload3(sb, hi);
+        sb_append_overload3(sb, lo);
+        it--;
+    }
+    return to_string_overload8(sb);
+}
+static void imm(StringBuilder* sb, uint64 imm) {
+    if (imm == 0) {
+        sb_append_overload1(sb, "0x0");
+    } else {
+        sb_append_overload1(sb, "0x");
+        sb_append_overload2(sb, trim_start_overload2(hex_overload1(imm), '0'));
+    }
+}
+static string stringify_overload2(x64_Operand op, StringBuilder* sb) {
+    /* local procedure */;
+    char* asm_types[9] = {"", "byte", "word", 0, "dword", 0, 0, 0, "qword"};
     switch (op.kind) {
         case 0:;
         break;
         case 1:;
-        sb_append_overload2(sb, to_string_overload4(op.imm_value));
+        imm(sb, (uint64)op.imm_value);
         break;
         case 2:;
         sb_append_overload1(sb, to_string_overload10(op.reg));
         break;
         case 3:;
+        char* typ = asm_types[op.bytesize];
+        sb_append_overload1(sb, typ);
+        sb_append_overload1(sb, " ");
         sb_append_overload1(sb, "ptr [");
         sb_append_overload1(sb, to_string_overload10(op.reg));
+        if (op.imm_value != 0) {
+            sb_append_overload1(sb, " + ");
+            imm(sb, (uint64)op.imm_value);
+        }
         sb_append_overload1(sb, "]");
         break;
     }
+    return to_string_overload8(sb);
 }
-static void test(char* code, char* str) {
+static void test(Array code, char* exp_str) {
     x64_Instruction inst = (x64_Instruction) {0};
-    decode_instruction(code, &inst);
-    StringBuilder* sb = temp_builder();
-    stringify_overload1(inst, sb);
-    uint32 l = strlen(str);
-    printf("%s", str);
-    for (int32 it = 0; it < (50 - l); it++) printf("%s", " ");
-    printf("%.*s%s", to_string_overload8(sb).length, to_string_overload8(sb).chars, "\n");
+    decode_instruction(code.data, &inst);
+    char* got_str = stringify_overload1(inst, temp_builder()).chars;
+    uint32 failed = strcmp(got_str, exp_str);
+    if (failed) printf("\033[1;31m"); else printf("\033[1;32m");
+    for (int32 it = 0; it < 15; it++) {
+        if (it < code.length) printf(" %02x", ((byte*)code.data)[it]); else printf("   ");
+    }
+    printf(" %-50s %-50s %s\n", exp_str, got_str, failed ? "Failed" : "Passed");
+    printf("\033[0m");
+    total_test_count++;
+    total_failed += failed ? 1 : 0;
 }
 static void run_tests() {
+    // static decl;
+    // static decl;
+    printf("%s", "Running Tests...\n");
     /* local procedure */;
-    test("\x03\x07", "add eax, dword ptr [rdi]");
-    test("\x67\x48\x01\x38", "add qword ptr [eax], rdi");
-    test("\xC7\x84\x24\xD4\x00\x00\x00\x00\x00\x00\x00", "mov dword ptr [rsp + 0xd4], 0x0");
+    test((Array)(Array) { .length = 2, .data = (byte[]){3, 7}}, "add eax, dword ptr [rdi]");
+    test((Array)(Array) { .length = 4, .data = (byte[]){103, 72, 1, 56}}, "add qword ptr [eax], rdi");
+    test((Array)(Array) { .length = 11, .data = (byte[]){199, 132, 36, 212, 0, 0, 0, 0, 0, 0, 0}}, "mov dword ptr [rsp + 0xd4], 0x0");
     printf("%s", "Grp11 - MOV 0xC7\n");
-    test("\xc7\x00\x10\x00\x00\x00", "mov dword ptr [rax], 0x10");
-    test("\xc7\x40\x01\x10\x00\x00\x00", "mov dword ptr [rax + 0x1], 0x10");
-    test("\xc7\x04\x18\x10\x00\x00\x00", "mov dword ptr [rax + rbx*1], 0x10");
-    test("\xc7\x44\x18\x01\x10\x00\x00\x00", "mov dword ptr [rax + rbx*1 + 0x1], 0x10");
-    test("\xc7\x44\x58\x01\x10\x00\x00\x00", "mov dword ptr [rax + rbx*2 + 0x1], 0x10");
+    test((Array)(Array) { .length = 6, .data = (byte[]){199, 0, 16, 0, 0, 0}}, "mov dword ptr [rax], 0x10");
+    test((Array)(Array) { .length = 7, .data = (byte[]){199, 64, 1, 16, 0, 0, 0}}, "mov dword ptr [rax + 0x1], 0x10");
+    test((Array)(Array) { .length = 7, .data = (byte[]){199, 4, 24, 16, 0, 0, 0}}, "mov dword ptr [rax + rbx*1], 0x10");
+    test((Array)(Array) { .length = 8, .data = (byte[]){199, 68, 24, 1, 16, 0, 0, 0}}, "mov dword ptr [rax + rbx*1 + 0x1], 0x10");
+    test((Array)(Array) { .length = 8, .data = (byte[]){199, 68, 88, 1, 16, 0, 0, 0}}, "mov dword ptr [rax + rbx*2 + 0x1], 0x10");
     printf("%s", "Grp11 - MOV 0xC6\n");
-    test("\xc6\x00\x10", "mov byte ptr [rax], 0x10");
-    test("\xc6\x40\x01\x10", "mov byte ptr [rax + 0x1], 0x10");
-    test("\xc6\x04\x18\x10", "mov byte ptr [rax + rbx*1], 0x10");
-    test("\xc6\x44\x18\x01\x10", "mov byte ptr [rax + rbx*1 + 0x1], 0x10");
-    test("\xc6\x44\x58\x01\x10", "mov byte ptr [rax + rbx*2 + 0x1], 0x10");
+    test((Array)(Array) { .length = 3, .data = (byte[]){198, 0, 16}}, "mov byte ptr [rax], 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){198, 64, 1, 16}}, "mov byte ptr [rax + 0x1], 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){198, 4, 24, 16}}, "mov byte ptr [rax + rbx*1], 0x10");
+    test((Array)(Array) { .length = 5, .data = (byte[]){198, 68, 24, 1, 16}}, "mov byte ptr [rax + rbx*1 + 0x1], 0x10");
+    test((Array)(Array) { .length = 5, .data = (byte[]){198, 68, 88, 1, 16}}, "mov byte ptr [rax + rbx*2 + 0x1], 0x10");
     printf("%s", "\n");
-    test("\x00\xd8", "add al, bl");
-    test("\x48\x01\xe0", "add rax, rsp");
-    test("\x01\xe0", "add eax, esp");
-    test("\x02\x00", "add al, byte ptr [rax]");
-    test("\x03\x00", "add eax, dword ptr [rax]");
-    test("\x04\x10", "add al, 0x10");
-    test("\x66\x05\x00\x10", "add ax, 0x1000");
-    test("\x05\x00\x10\x00\x00", "add eax, 0x1000");
-    test("\x10\xd8", "adc al, bl");
-    test("\x48\x11\xe0", "adc rax, rsp");
-    test("\x11\xe0", "adc eax, esp");
-    test("\x12\x00", "adc al, byte ptr [rax]");
-    test("\x13\x00", "adc eax, dword ptr [rax]");
-    test("\x14\x10", "adc al, 0x10");
-    test("\x66\x15\x00\x10", "adc ax, 0x1000");
-    test("\x15\x00\x10\x00\x00", "adc eax, 0x1000");
-    test("\x20\xd8", "and al, bl");
-    test("\x48\x21\xe0", "and rax, rsp");
-    test("\x21\xe0", "and eax, esp");
-    test("\x22\x00", "and al, byte ptr [rax]");
-    test("\x23\x00", "and eax, dword ptr [rax]");
-    test("\x24\x10", "and al, 0x10");
-    test("\x66\x25\x00\x10", "and ax, 0x1000");
-    test("\x25\x00\x10\x00\x00", "and eax, 0x1000");
-    test("\x30\xd8", "xor al, bl");
-    test("\x48\x31\xe0", "xor rax, rsp");
-    test("\x31\xe0", "xor eax, esp");
-    test("\x32\x00", "xor al, byte ptr [rax]");
-    test("\x33\x00", "xor eax, dword ptr [rax]");
-    test("\x34\x10", "xor al, 0x10");
-    test("\x66\x35\x00\x10", "xor ax, 0x1000");
-    test("\x35\x00\x10\x00\x00", "xor eax, 0x1000");
-    test("\x08\xd8", "or al, bl");
-    test("\x48\x09\xe0", "or rax, rsp");
-    test("\x09\xe0", "or eax, esp");
-    test("\x0a\x00", "or al, byte ptr [rax]");
-    test("\x0b\x00", "or eax, dword ptr [rax]");
-    test("\x0c\x10", "or al, 0x10");
-    test("\x66\x0d\x00\x10", "or ax, 0x1000");
-    test("\x0d\x00\x10\x00\x00", "or eax, 0x1000");
-    test("\x18\xd8", "sbb al, bl");
-    test("\x48\x19\xe0", "sbb rax, rsp");
-    test("\x19\xe0", "sbb eax, esp");
-    test("\x1a\x00", "sbb al, byte ptr [rax]");
-    test("\x1b\x00", "sbb eax, dword ptr [rax]");
-    test("\x1c\x10", "sbb al, 0x10");
-    test("\x66\x1d\x00\x10", "sbb ax, 0x1000");
-    test("\x1d\x00\x10\x00\x00", "sbb eax, 0x1000");
-    test("\x28\xd8", "sub al, bl");
-    test("\x48\x29\xe0", "sub rax, rsp");
-    test("\x29\xe0", "sub eax, esp");
-    test("\x2a\x00", "sub al, byte ptr [rax]");
-    test("\x2b\x00", "sub eax, dword ptr [rax]");
-    test("\x2c\x10", "sub al, 0x10");
-    test("\x66\x2d\x00\x10", "sub ax, 0x1000");
-    test("\x2d\x00\x10\x00\x00", "sub eax, 0x1000");
-    test("\x38\xd8", "cmp al, bl");
-    test("\x48\x39\xe0", "cmp rax, rsp");
-    test("\x39\xe0", "cmp eax, esp");
-    test("\x3a\x00", "cmp al, byte ptr [rax]");
-    test("\x3b\x00", "cmp eax, dword ptr [rax]");
-    test("\x3c\x10", "cmp al, 0x10");
-    test("\x66\x3d\x00\x10", "cmp ax, 0x1000");
-    test("\x3d\x00\x10\x00\x00", "cmp eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){0, 216}}, "add al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 1, 224}}, "add rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){1, 224}}, "add eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){2, 0}}, "add al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){3, 0}}, "add eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){4, 16}}, "add al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 5, 0, 16}}, "add ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){5, 0, 16, 0, 0}}, "add eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){16, 216}}, "adc al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 17, 224}}, "adc rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){17, 224}}, "adc eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){18, 0}}, "adc al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){19, 0}}, "adc eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){20, 16}}, "adc al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 21, 0, 16}}, "adc ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){21, 0, 16, 0, 0}}, "adc eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){32, 216}}, "and al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 33, 224}}, "and rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){33, 224}}, "and eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){34, 0}}, "and al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){35, 0}}, "and eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){36, 16}}, "and al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 37, 0, 16}}, "and ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){37, 0, 16, 0, 0}}, "and eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){48, 216}}, "xor al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 49, 224}}, "xor rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){49, 224}}, "xor eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){50, 0}}, "xor al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){51, 0}}, "xor eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){52, 16}}, "xor al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 53, 0, 16}}, "xor ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){53, 0, 16, 0, 0}}, "xor eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){8, 216}}, "or al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 9, 224}}, "or rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){9, 224}}, "or eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){10, 0}}, "or al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){11, 0}}, "or eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){12, 16}}, "or al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 13, 0, 16}}, "or ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){13, 0, 16, 0, 0}}, "or eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){24, 216}}, "sbb al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 25, 224}}, "sbb rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){25, 224}}, "sbb eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){26, 0}}, "sbb al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){27, 0}}, "sbb eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){28, 16}}, "sbb al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 29, 0, 16}}, "sbb ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){29, 0, 16, 0, 0}}, "sbb eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){40, 216}}, "sub al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 41, 224}}, "sub rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){41, 224}}, "sub eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){42, 0}}, "sub al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){43, 0}}, "sub eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){44, 16}}, "sub al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 45, 0, 16}}, "sub ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){45, 0, 16, 0, 0}}, "sub eax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){56, 216}}, "cmp al, bl");
+    test((Array)(Array) { .length = 3, .data = (byte[]){72, 57, 224}}, "cmp rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){57, 224}}, "cmp eax, esp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){58, 0}}, "cmp al, byte ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){59, 0}}, "cmp eax, dword ptr [rax]");
+    test((Array)(Array) { .length = 2, .data = (byte[]){60, 16}}, "cmp al, 0x10");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 61, 0, 16}}, "cmp ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){61, 0, 16, 0, 0}}, "cmp eax, 0x1000");
     printf("%s", "Grp1 - Immediates\n");
-    test("\x80\xc1\xff", "add cl, 0xff");
-    test("\x81\xc2\x00\x10\x00\x10", "add edx, 0x10001000");
-    test("\x83\xc3\x01", "add ebx, 0x1");
-    test("\x80\xc9\xff", "or cl, 0xff");
-    test("\x81\xca\x00\x10\x00\x10", "or edx, 0x10001000");
-    test("\x83\xcb\x01", "or ebx, 0x1");
-    test("\x80\xd1\xff", "adc cl, 0xff");
-    test("\x81\xd2\x00\x10\x00\x10", "adc edx, 0x10001000");
-    test("\x83\xd3\x01", "adc ebx, 0x1");
-    test("\x80\xd9\xff", "sbb cl, 0xff");
-    test("\x81\xda\x00\x10\x00\x10", "sbb edx, 0x10001000");
-    test("\x83\xdb\x01", "sbb ebx, 0x1");
-    test("\x80\xe1\xff", "and cl, 0xff");
-    test("\x81\xe2\x00\x10\x00\x10", "and edx, 0x10001000");
-    test("\x83\xe3\x01", "and ebx, 0x1");
-    test("\x80\xe9\xff", "sub cl, 0xff");
-    test("\x81\xea\x00\x10\x00\x10", "sub edx, 0x10001000");
-    test("\x83\xeb\x01", "sub ebx, 0x1");
-    test("\x80\xf1\xff", "xor cl, 0xff");
-    test("\x81\xf2\x00\x10\x00\x10", "xor edx, 0x10001000");
-    test("\x83\xf3\x01", "xor ebx, 0x1");
-    test("\x80\xf9\xff", "cmp cl, 0xff");
-    test("\x81\xfa\x00\x10\x00\x10", "cmp edx, 0x10001000");
-    test("\x83\xfb\x01", "cmp ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 193, 255}}, "add cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 194, 0, 16, 0, 16}}, "add edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 195, 1}}, "add ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 201, 255}}, "or cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 202, 0, 16, 0, 16}}, "or edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 203, 1}}, "or ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 209, 255}}, "adc cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 210, 0, 16, 0, 16}}, "adc edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 211, 1}}, "adc ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 217, 255}}, "sbb cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 218, 0, 16, 0, 16}}, "sbb edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 219, 1}}, "sbb ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 225, 255}}, "and cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 226, 0, 16, 0, 16}}, "and edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 227, 1}}, "and ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 233, 255}}, "sub cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 234, 0, 16, 0, 16}}, "sub edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 235, 1}}, "sub ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 241, 255}}, "xor cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 242, 0, 16, 0, 16}}, "xor edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 243, 1}}, "xor ebx, 0x1");
+    test((Array)(Array) { .length = 3, .data = (byte[]){128, 249, 255}}, "cmp cl, 0xff");
+    test((Array)(Array) { .length = 6, .data = (byte[]){129, 250, 0, 16, 0, 16}}, "cmp edx, 0x10001000");
+    test((Array)(Array) { .length = 3, .data = (byte[]){131, 251, 1}}, "cmp ebx, 0x1");
     printf("%s", "Interupts\n");
-    test("\xcc", "int3");
-    test("\xcd\x01", "int 0x1");
+    test((Array)(Array) { .length = 1, .data = (byte[]){204}}, "int3");
+    test((Array)(Array) { .length = 2, .data = (byte[]){205, 1}}, "int 0x1");
     printf("%s", "test instruction\n");
-    test("\xa8\x12", "test al, 0x12");
-    test("\x66\xa9\x00\x10", "test ax, 0x1000");
-    test("\xa9\x00\x10\x00\x00", "test eax, 0x1000");
-    test("\x48\xa9\x00\x10\x00\x00", "test rax, 0x1000");
+    test((Array)(Array) { .length = 2, .data = (byte[]){168, 18}}, "test al, 0x12");
+    test((Array)(Array) { .length = 4, .data = (byte[]){102, 169, 0, 16}}, "test ax, 0x1000");
+    test((Array)(Array) { .length = 5, .data = (byte[]){169, 0, 16, 0, 0}}, "test eax, 0x1000");
+    test((Array)(Array) { .length = 6, .data = (byte[]){72, 169, 0, 16, 0, 0}}, "test rax, 0x1000");
     printf("%s", "MOV immediate byte into byte register - 0xB0 to 0xB7\n");
-    test("\xb0\x0a", "mov al, 0xa");
-    test("\xb1\x0b", "mov cl, 0xb");
-    test("\xb2\x0c", "mov dl, 0xc");
-    test("\xb3\x0d", "mov bl, 0xd");
-    test("\xb4\x0e", "mov ah, 0xe");
-    test("\xb5\x0f", "mov ch, 0xf");
-    test("\xb6\xab", "mov dh, 0xab");
-    test("\xb7\xcd", "mov bh, 0xcd");
-    test("\x41\xb0\x0a", "mov r8b, 0xa");
-    test("\x41\xb1\x0b", "mov r9b, 0xb");
-    test("\x41\xb2\x0c", "mov r10b, 0xc");
-    test("\x41\xb3\x0d", "mov r11b, 0xd");
-    test("\x41\xb4\x0e", "mov r12b, 0xe");
-    test("\x41\xb5\x0f", "mov r13b, 0xf");
-    test("\x41\xb6\xab", "mov r14b, 0xab");
-    test("\x41\xb7\xcd", "mov r15b, 0xcd");
+    test((Array)(Array) { .length = 2, .data = (byte[]){176, 10}}, "mov al, 0xa");
+    test((Array)(Array) { .length = 2, .data = (byte[]){177, 11}}, "mov cl, 0xb");
+    test((Array)(Array) { .length = 2, .data = (byte[]){178, 12}}, "mov dl, 0xc");
+    test((Array)(Array) { .length = 2, .data = (byte[]){179, 13}}, "mov bl, 0xd");
+    test((Array)(Array) { .length = 2, .data = (byte[]){180, 14}}, "mov ah, 0xe");
+    test((Array)(Array) { .length = 2, .data = (byte[]){181, 15}}, "mov ch, 0xf");
+    test((Array)(Array) { .length = 2, .data = (byte[]){182, 171}}, "mov dh, 0xab");
+    test((Array)(Array) { .length = 2, .data = (byte[]){183, 205}}, "mov bh, 0xcd");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 176, 10}}, "mov r8b, 0xa");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 177, 11}}, "mov r9b, 0xb");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 178, 12}}, "mov r10b, 0xc");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 179, 13}}, "mov r11b, 0xd");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 180, 14}}, "mov r12b, 0xe");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 181, 15}}, "mov r13b, 0xf");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 182, 171}}, "mov r14b, 0xab");
+    test((Array)(Array) { .length = 3, .data = (byte[]){65, 183, 205}}, "mov r15b, 0xcd");
     printf("%s", "MOV immediate into register - 0xB8 to 0xBF\n");
-    test("\xb8\x0a\x00\x00\x00", "mov eax, 0xa");
-    test("\xb9\x0b\x00\x00\x00", "mov ecx, 0xb");
-    test("\xba\x0c\x00\x00\x00", "mov edx, 0xc");
-    test("\xbb\x0d\x00\x00\x00", "mov ebx, 0xd");
-    test("\xbc\x0e\x00\x00\x00", "mov esp, 0xe");
-    test("\xbd\x0f\x00\x00\x00", "mov ebp, 0xf");
-    test("\xbe\xab\x00\x00\x00", "mov esi, 0xab");
-    test("\xbf\xcd\x00\x00\x00", "mov edi, 0xcd");
-    test("\x41\xb8\x0a\x00\x00\x00", "mov r8d, 0xa");
-    test("\x41\xb9\x0b\x00\x00\x00", "mov r9d, 0xb");
-    test("\x41\xba\x0c\x00\x00\x00", "mov r10d, 0xc");
-    test("\x41\xbb\x0d\x00\x00\x00", "mov r11d, 0xd");
-    test("\x41\xbc\x0e\x00\x00\x00", "mov r12d, 0xe");
-    test("\x41\xbd\x0f\x00\x00\x00", "mov r13d, 0xf");
-    test("\x41\xbe\xab\x00\x00\x00", "mov r14d, 0xab");
-    test("\x41\xbf\xcd\x00\x00\x00", "mov r15d, 0xcd");
-    test("\x49\xb8\x00\x0a\x00\x00\x00\x00\x00\x00", "mov r8, 0xa00");
-    test("\x49\xb9\x00\x0b\x00\x00\x00\x00\x00\x00", "mov r9, 0xb00");
-    test("\x49\xba\x00\x0c\x00\x00\x00\x00\x00\x00", "mov r10, 0xc00");
-    test("\x49\xbb\x00\x0d\x00\x00\x00\x00\x00\x00", "mov r11, 0xd00");
-    test("\x49\xbc\x00\x0e\x00\x00\x00\x00\x00\x00", "mov r12, 0xe00");
-    test("\x49\xbd\x00\x0f\x00\x00\x00\x00\x00\x00", "mov r13, 0xf00");
-    test("\x49\xbe\x00\xab\x00\x00\x00\x00\x00\x00", "mov r14, 0xab00");
-    test("\x49\xbf\x00\xcd\x00\x00\x00\x00\x00\x00", "mov r15, 0xcd00");
+    test((Array)(Array) { .length = 5, .data = (byte[]){184, 10, 0, 0, 0}}, "mov eax, 0xa");
+    test((Array)(Array) { .length = 5, .data = (byte[]){185, 11, 0, 0, 0}}, "mov ecx, 0xb");
+    test((Array)(Array) { .length = 5, .data = (byte[]){186, 12, 0, 0, 0}}, "mov edx, 0xc");
+    test((Array)(Array) { .length = 5, .data = (byte[]){187, 13, 0, 0, 0}}, "mov ebx, 0xd");
+    test((Array)(Array) { .length = 5, .data = (byte[]){188, 14, 0, 0, 0}}, "mov esp, 0xe");
+    test((Array)(Array) { .length = 5, .data = (byte[]){189, 15, 0, 0, 0}}, "mov ebp, 0xf");
+    test((Array)(Array) { .length = 5, .data = (byte[]){190, 171, 0, 0, 0}}, "mov esi, 0xab");
+    test((Array)(Array) { .length = 5, .data = (byte[]){191, 205, 0, 0, 0}}, "mov edi, 0xcd");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 184, 10, 0, 0, 0}}, "mov r8d, 0xa");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 185, 11, 0, 0, 0}}, "mov r9d, 0xb");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 186, 12, 0, 0, 0}}, "mov r10d, 0xc");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 187, 13, 0, 0, 0}}, "mov r11d, 0xd");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 188, 14, 0, 0, 0}}, "mov r12d, 0xe");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 189, 15, 0, 0, 0}}, "mov r13d, 0xf");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 190, 171, 0, 0, 0}}, "mov r14d, 0xab");
+    test((Array)(Array) { .length = 6, .data = (byte[]){65, 191, 205, 0, 0, 0}}, "mov r15d, 0xcd");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 184, 0, 10, 0, 0, 0, 0, 0, 0}}, "mov r8, 0xa00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 185, 0, 11, 0, 0, 0, 0, 0, 0}}, "mov r9, 0xb00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 186, 0, 12, 0, 0, 0, 0, 0, 0}}, "mov r10, 0xc00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 187, 0, 13, 0, 0, 0, 0, 0, 0}}, "mov r11, 0xd00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 188, 0, 14, 0, 0, 0, 0, 0, 0}}, "mov r12, 0xe00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 189, 0, 15, 0, 0, 0, 0, 0, 0}}, "mov r13, 0xf00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 190, 0, 171, 0, 0, 0, 0, 0, 0}}, "mov r14, 0xab00");
+    test((Array)(Array) { .length = 10, .data = (byte[]){73, 191, 0, 205, 0, 0, 0, 0, 0, 0}}, "mov r15, 0xcd00");
     printf("%s", "XCHG - 0x86, 0x87\n");
-    test("\x86\xE9", "xchg cl, ch");
-    test("\x86\x63\x01", "xchg byte ptr [rbx + 0x1], ah");
-    test("\x4D\x87\xC8", "xchg r8, r9");
-    test("\x87\x08", "xchg dword ptr [rax], ecx");
-    test("\x67\x87\x4C\xD0\x0F", "xchg dword ptr [eax + edx*8 + 0xf], ecx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){134, 233}}, "xchg cl, ch");
+    test((Array)(Array) { .length = 3, .data = (byte[]){134, 99, 1}}, "xchg byte ptr [rbx + 0x1], ah");
+    test((Array)(Array) { .length = 3, .data = (byte[]){77, 135, 200}}, "xchg r8, r9");
+    test((Array)(Array) { .length = 2, .data = (byte[]){135, 8}}, "xchg dword ptr [rax], ecx");
+    test((Array)(Array) { .length = 5, .data = (byte[]){103, 135, 76, 208, 15}}, "xchg dword ptr [eax + edx*8 + 0xf], ecx");
     printf("%s", "XCHG eax - 0x91 to 0x97\n");
-    test("\x91", "xchg eax, ecx");
-    test("\x92", "xchg eax, edx");
-    test("\x93", "xchg eax, ebx");
-    test("\x94", "xchg eax, esp");
-    test("\x95", "xchg eax, ebp");
-    test("\x96", "xchg eax, esi");
-    test("\x97", "xchg eax, edi");
-    test("\x41\x90", "xchg eax, r8d");
-    test("\x41\x91", "xchg eax, r9d");
-    test("\x41\x92", "xchg eax, r10d");
-    test("\x41\x93", "xchg eax, r11d");
-    test("\x41\x94", "xchg eax, r12d");
-    test("\x41\x95", "xchg eax, r13d");
-    test("\x41\x96", "xchg eax, r14d");
-    test("\x41\x97", "xchg eax, r15d");
+    test((Array)(Array) { .length = 1, .data = (byte[]){145}}, "xchg eax, ecx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){146}}, "xchg eax, edx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){147}}, "xchg eax, ebx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){148}}, "xchg eax, esp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){149}}, "xchg eax, ebp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){150}}, "xchg eax, esi");
+    test((Array)(Array) { .length = 1, .data = (byte[]){151}}, "xchg eax, edi");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 144}}, "xchg eax, r8d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 145}}, "xchg eax, r9d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 146}}, "xchg eax, r10d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 147}}, "xchg eax, r11d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 148}}, "xchg eax, r12d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 149}}, "xchg eax, r13d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 150}}, "xchg eax, r14d");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 151}}, "xchg eax, r15d");
     printf("%s", "XCHG rax - 0x91 to 0x97\n");
-    test("\x48\x91", "xchg rax, rcx");
-    test("\x48\x92", "xchg rax, rdx");
-    test("\x48\x93", "xchg rax, rbx");
-    test("\x48\x94", "xchg rax, rsp");
-    test("\x48\x95", "xchg rax, rbp");
-    test("\x48\x96", "xchg rax, rsi");
-    test("\x48\x97", "xchg rax, rdi");
-    test("\x49\x90", "xchg rax, r8");
-    test("\x49\x91", "xchg rax, r9");
-    test("\x49\x92", "xchg rax, r10");
-    test("\x49\x93", "xchg rax, r11");
-    test("\x49\x94", "xchg rax, r12");
-    test("\x49\x95", "xchg rax, r13");
-    test("\x49\x96", "xchg rax, r14");
-    test("\x49\x97", "xchg rax, r15");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 145}}, "xchg rax, rcx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 146}}, "xchg rax, rdx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 147}}, "xchg rax, rbx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 148}}, "xchg rax, rsp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 149}}, "xchg rax, rbp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 150}}, "xchg rax, rsi");
+    test((Array)(Array) { .length = 2, .data = (byte[]){72, 151}}, "xchg rax, rdi");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 144}}, "xchg rax, r8");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 145}}, "xchg rax, r9");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 146}}, "xchg rax, r10");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 147}}, "xchg rax, r11");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 148}}, "xchg rax, r12");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 149}}, "xchg rax, r13");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 150}}, "xchg rax, r14");
+    test((Array)(Array) { .length = 2, .data = (byte[]){73, 151}}, "xchg rax, r15");
     printf("%s", "XCHG ax - 0x91 to 0x97\n");
-    test("\x66\x90", "xchg ax, ax");
-    test("\x66\x91", "xchg ax, cx");
-    test("\x66\x92", "xchg ax, dx");
-    test("\x66\x93", "xchg ax, bx");
-    test("\x66\x94", "xchg ax, sp");
-    test("\x66\x95", "xchg ax, bp");
-    test("\x66\x96", "xchg ax, si");
-    test("\x66\x97", "xchg ax, di");
-    test("\x66\x41\x90", "xchg ax, r8w");
-    test("\x66\x41\x91", "xchg ax, r9w");
-    test("\x66\x41\x92", "xchg ax, r10w");
-    test("\x66\x41\x93", "xchg ax, r11w");
-    test("\x66\x41\x94", "xchg ax, r12w");
-    test("\x66\x41\x95", "xchg ax, r13w");
-    test("\x66\x41\x96", "xchg ax, r14w");
-    test("\x66\x41\x97", "xchg ax, r15w");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 144}}, "xchg ax, ax");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 145}}, "xchg ax, cx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 146}}, "xchg ax, dx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 147}}, "xchg ax, bx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 148}}, "xchg ax, sp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 149}}, "xchg ax, bp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 150}}, "xchg ax, si");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 151}}, "xchg ax, di");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 144}}, "xchg ax, r8w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 145}}, "xchg ax, r9w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 146}}, "xchg ax, r10w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 147}}, "xchg ax, r11w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 148}}, "xchg ax, r12w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 149}}, "xchg ax, r13w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 150}}, "xchg ax, r14w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 151}}, "xchg ax, r15w");
     printf("%s", "call\n");
-    test("\xe8\x10\x00\x00\x00", "call 0x10");
+    test((Array)(Array) { .length = 5, .data = (byte[]){232, 16, 0, 0, 0}}, "call 0x10");
+    printf("Summary: %d/%d tests passed. Failed: %d\n", (total_test_count - total_failed), total_test_count, total_failed);
 }
 static void __static_init() {
     temps = alloc_temp_builders(8);

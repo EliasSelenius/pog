@@ -204,6 +204,73 @@ byte[0x100] x64_opcode_immediate = {
     /*F0*/ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
+const Eb   = 1;
+const Ev   = 2;
+const Gb   = 3;
+const Gv   = 4;
+const AL   = 5;
+const rAX  = 6;
+const colv = 7;
+const Iz   = 8;
+const Ib   = 9;
+const Yb   = 10;
+const Yz   = 11;
+const DX   = 12;
+const Jb   = 13;
+const Sw   = 14;
+const Fv   = 15;
+const Ob   = 16;
+const Ov   = 17;
+const Xb   = 18;
+const Xv   = 19;
+const colb = 20;
+const Iw   = 21;
+const esc  = 22;
+const Jz   = 23;
+const I1   = 24;
+const M    = 25;
+const Ew   = 26;
+
+byte[0x100] x64_operand0 = {
+//     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+/*00*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
+/*10*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
+/*20*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
+/*30*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
+/*40*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+/*50*/ colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,
+/*60*/ 0,   0,   0,   Gv,  0,   0,   0,   0,   Iz,  Gv,  Ib,  Gv,  Yb,  Yz,  DX,  DX,
+/*70*/ Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,
+/*80*/ Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Gb,  Gv,  Ev,  Gv,  Sw,  Ev,
+/*90*/ colv,colv,colv,colv,colv,colv,colv,colv,0,   0,   0,   0,   Fv,  Fv,  0,   0,
+/*A0*/ AL,  rAX, Ob,  Ov,  Yb,  Yv,  Xb,  Xv,  AL,  rAX, Yb,  Yv,  AL,  rAX, AL,  rAX,
+/*B0*/ colb,colb,colb,colb,colb,colb,colb,colb,colv,colv,colv,colv,colv,colv,colv,colv,
+/*C0*/ Eb,  Ev,  Iw,  0,   0,   0,   Eb,  Ev,  Iw,  0,   Iw,  0,   0,   Ib,  0,   0,
+/*D0*/ Eb,  Ev,  Eb,  Ev,  0,   0,   0,   0,   esc, esc, esc, esc, esc, esc, esc, esc,
+/*E0*/ Jb,  Jb,  Jb,  Jb,  AL,  eAX, Ib,  Ib,  Jz,  Jz,  0,   Jb,  AL,  eAX, DX,  DX,
+/*F0*/ 0,   0,   0,   0,   0,   0,   Eb,  Ev,  0,   0,   0,   0,   0,   0,   0,   0,
+};
+
+byte[0x100] x64_operand1 = {
+//     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+/*00*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
+/*10*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
+/*20*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
+/*30*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
+/*40*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+/*50*/ colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,
+/*60*/ 0,   0,   0,   Ev,  0,   0,   0,   0,   0,   Ev,  0,   Ev,  DX,  DX,  Xb,  Xz,
+/*70*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+/*80*/ Ib,  Iz,  0,   Ib,  Gb,  Gv,  Gb,  Gv,  Gb,  Gv,  Eb,  Ev,  Sw,  M,   Ew,  0,
+/*90*/ rAX, rAX, rAX, rAX, rAX, rAX, rAX, rAX, 0,   0,   0,   0,   0,   0,   0,   0,
+/*A0*/ Ob,  Ov,  AL,  rAX, Xb,  Xv,  Yb,  Yv,  Ib,  Iz,  AL,  rAX, Xb,  Xv,  Yb,  Yv,
+/*B0*/ Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,
+/*C0*/ Ib,  Ib,  0,   0,   0,   0,   Ib,  Iz,  Ib,  0,   0,   0,   0,   0,   0,   0,
+/*D0*/ I1,  I1,  CL,  CL,  0,   0,   0,   0,   esc, esc, esc, esc, esc, esc, esc, esc,
+/*E0*/ 0,   0,   0,   0,   Ib,  Ib,  AL,  eAX, 0,   0,   0,   0,   DX,  DX,  AL,  eAX,
+/*F0*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+};
+
 
 byte* decode_instruction(byte* ptr, x64_Instruction* inst) {
     @inst = {};

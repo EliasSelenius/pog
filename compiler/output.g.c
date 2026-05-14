@@ -222,7 +222,7 @@ struct x64_Operand { // deps = 0
     x64_Register index;
     uint32 scale;
     int64 imm_value;
-    uint32 bytesize;
+    uint32 opsize;
 };
 struct ModRM_SIB_disp { // deps = 0
     byte reg;
@@ -231,6 +231,7 @@ struct ModRM_SIB_disp { // deps = 0
     bool mem_is_register;
     uint32 scale;
     int32 disp;
+    bool rip_relative;
 };
 struct SR_Token { // deps = 1
     string str;
@@ -948,23 +949,24 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+53), .name = "index", .offset = 8},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
             {.type_info = (rtti_types+3), .name = "imm_value", .offset = 16},
-            {.type_info = (rtti_types+6), .name = "bytesize", .offset = 24},
+            {.type_info = (rtti_types+6), .name = "opsize", .offset = 24},
         }},
     },
     {
         .name = "ModRM_SIB_disp",
         .inner_type = 0,
-        .bytesize = 12,
+        .bytesize = 13,
         .alignment = 4,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 6, .data = (StructField[]){
+        .fields = (Array) { .length = 7, .data = (StructField[]){
             {.type_info = (rtti_types+57), .name = "reg", .offset = 0},
             {.type_info = (rtti_types+57), .name = "mem", .offset = 1},
             {.type_info = (rtti_types+57), .name = "idx", .offset = 2},
             {.type_info = (rtti_types+55), .name = "mem_is_register", .offset = 3},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 4},
             {.type_info = (rtti_types+2), .name = "disp", .offset = 8},
+            {.type_info = (rtti_types+55), .name = "rip_relative", .offset = 12},
         }},
     },
     {
@@ -1222,7 +1224,7 @@ static TypeInfo rtti_types[] = {
         .alignment = 4,
         .kind = 17,
         .num_ptr = 0,
-        .entries = (Array) { .length = 42, .data = (EnumEntry[]){
+        .entries = (Array) { .length = 44, .data = (EnumEntry[]){
             {.name = "none", .value = 0},
             {.name = "add", .value = 1},
             {.name = "or", .value = 2},
@@ -1264,7 +1266,9 @@ static TypeInfo rtti_types[] = {
             {.name = "sti", .value = 38},
             {.name = "cld", .value = 39},
             {.name = "std", .value = 40},
-            {.name = "prefix", .value = 41},
+            {.name = "ins", .value = 41},
+            {.name = "outs", .value = 42},
+            {.name = "prefix", .value = 43},
         }},
     },
     {
@@ -1274,7 +1278,7 @@ static TypeInfo rtti_types[] = {
         .alignment = 4,
         .kind = 17,
         .num_ptr = 0,
-        .entries = (Array) { .length = 66, .data = (EnumEntry[]){
+        .entries = (Array) { .length = 68, .data = (EnumEntry[]){
             {.name = "none", .value = 0},
             {.name = "al", .value = 1},
             {.name = "cl", .value = 2},
@@ -1341,6 +1345,8 @@ static TypeInfo rtti_types[] = {
             {.name = "r14", .value = 63},
             {.name = "r15", .value = 64},
             {.name = "rip", .value = 65},
+            {.name = "eflags", .value = 66},
+            {.name = "rflags", .value = 67},
         }},
     },
     {
@@ -1861,10 +1867,12 @@ static void print_ast(StringBuilder* sb, Pog_Unit* unit);
 static void read_exe(char* filename);
 static char* to_string_overload9(x64_Operation op);
 static char* to_string_overload10(x64_Register reg);
-static x64_Register reg_from_index(byte index, uint32 bytesize);
-static byte* decode_instruction(byte* ptr, x64_Instruction* inst);
+static x64_Register select_gpr(byte index, uint32 bytesize);
+static bool has_modrm(byte encoding);
+static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte opcode_reg, byte encoding, ModRM_SIB_disp modrm);
+static x64_Instruction decode_instruction(byte** pptr);
 static uint64 read_unsigned_imm(byte** pptr, uint32 size);
-static byte* modrm(byte* ptr, ModRM_SIB_disp* m);
+static ModRM_SIB_disp decode_modrm(byte** pptr);
 static string stringify_overload1(x64_Instruction inst, StringBuilder* sb);
 static char hex_nibble(byte val);
 static string hex_overload1(uint64 val);
@@ -1874,9 +1882,9 @@ static void run_tests();
 
 // Declarations
 static Array pog_all_ops = (Array) { .length = 6, .data = (Array[]){(Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {23, 13}, (Pog_Binary_Op) {24, 14}}}, (Array) { .length = 6, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {60, 7}, (Pog_Binary_Op) {61, 8}, (Pog_Binary_Op) {62, 9}, (Pog_Binary_Op) {63, 10}, (Pog_Binary_Op) {64, 11}, (Pog_Binary_Op) {65, 12}}}, (Array) { .length = 1, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {42, 6}}}, (Array) { .length = 5, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {49, 15}, (Pog_Binary_Op) {50, 16}, (Pog_Binary_Op) {51, 17}, (Pog_Binary_Op) {52, 18}, (Pog_Binary_Op) {53, 19}}}, (Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {67, 1}, (Pog_Binary_Op) {68, 2}}}, (Array) { .length = 3, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {69, 3}, (Pog_Binary_Op) {70, 4}, (Pog_Binary_Op) {71, 5}}}}};
-static x64_Operation x64_opcode_operation[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 41, 0, 6, 6, 6, 6, 6, 6, 41, 0, 7, 7, 7, 7, 7, 7, 41, 0, 8, 8, 8, 8, 8, 8, 41, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 41, 41, 41, 41, 10, 13, 10, 13, 0, 0, 0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 41, 32, 41, 41, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
-static byte x64_opcode_modrm[256] = {1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-static byte x64_opcode_immediate[256] = {0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static x64_Operation x64_opcode_operation[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 43, 0, 6, 6, 6, 6, 6, 6, 43, 0, 7, 7, 7, 7, 7, 7, 43, 0, 8, 8, 8, 8, 8, 8, 43, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 43, 43, 43, 43, 10, 13, 10, 13, 41, 41, 42, 42, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 43, 32, 43, 43, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
+static byte x64_operand0[256] = {1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 5, 0, 0, 0, 0, 13, 5, 11, 5, 15, 16, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 4, 5, 3, 5, 21, 3, 8, 8, 8, 8, 8, 8, 8, 8, 0, 0, 0, 0, 22, 22, 0, 0, 6, 8, 23, 24, 15, 17, 25, 27, 6, 8, 15, 17, 6, 8, 6, 8, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 1, 3, 12, 0, 0, 0, 1, 3, 12, 0, 12, 0, 0, 11, 0, 0, 1, 3, 1, 3, 0, 0, 0, 0, 28, 28, 28, 28, 28, 28, 28, 28, 19, 19, 19, 19, 6, 7, 11, 11, 20, 20, 0, 19, 6, 7, 18, 18, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0};
+static byte x64_operand1[256] = {4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 3, 18, 18, 25, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 13, 0, 11, 4, 5, 4, 5, 4, 5, 1, 3, 21, 30, 2, 0, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 23, 24, 6, 8, 25, 27, 15, 17, 11, 13, 6, 8, 25, 27, 15, 17, 11, 11, 11, 11, 11, 11, 11, 11, 14, 14, 14, 14, 14, 14, 14, 14, 11, 11, 0, 0, 0, 0, 11, 13, 11, 0, 0, 0, 0, 0, 0, 0, 29, 29, 31, 31, 0, 0, 0, 0, 28, 28, 28, 28, 28, 28, 28, 28, 0, 0, 0, 0, 11, 11, 6, 7, 0, 0, 0, 0, 18, 18, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static StringBuilder* temps;
 static uint32 rotation = 0;
 static uint32 total_test_count = 0;
@@ -4919,15 +4927,18 @@ static char* to_string_overload9(x64_Operation op) {
         case 40:;
         return "std";
         case 41:;
+        return "ins";
+        case 42:;
+        return "outs";
+        case 43:;
         return "prefix";
     }
 }
 static char* to_string_overload10(x64_Register reg) {
-    Array strs = (Array) { .length = 66, .data = (char*[]){"none", "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rip"}};
+    Array strs = (Array) { .length = 68, .data = (char*[]){"none", "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh", "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b", "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w", "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d", "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rip", "eflags", "rflags"}};
     return ((char**)strs.data)[reg];
 }
-static x64_Register reg_from_index(byte index, uint32 bytesize) {
-    if (index == -1) return 65;
+static x64_Register select_gpr(byte index, uint32 bytesize) {
     switch (bytesize) {
         case 1:;
         return (1 + index);
@@ -4942,21 +4953,156 @@ static x64_Register reg_from_index(byte index, uint32 bytesize) {
     }
     return 0;
 }
-static uint32 bytesize(uint32 size_selector, uint32 opsize) {
-    switch (size_selector) {
-        default:;
-        case 0:;
-        return 0;
+static bool has_modrm(byte encoding) {
+    switch (encoding) {
         case 1:;
         return 1;
         case 2:;
-        return opsize;
+        return 1;
         case 3:;
-        return (opsize <= 4) ? opsize : 4;
+        return 1;
+        case 4:;
+        return 1;
+        case 5:;
+        return 1;
+        case 6:;
+        return 0;
+        case 7:;
+        return 0;
+        case 8:;
+        return 0;
+        case 9:;
+        return 0;
+        case 10:;
+        return 0;
+        case 11:;
+        return 0;
+        case 12:;
+        return 0;
+        case 13:;
+        return 0;
+        case 14:;
+        return 0;
+        case 15:;
+        return 0;
+        case 16:;
+        return 0;
+        case 17:;
+        return 0;
+        case 18:;
+        return 0;
+        case 19:;
+        return 0;
+        case 20:;
+        return 0;
+        case 21:;
+        return 1;
+        case 22:;
+        return 0;
+        case 23:;
+        return 0;
+        case 24:;
+        return 0;
+        case 25:;
+        return 0;
+        case 26:;
+        return 0;
+        case 27:;
+        return 0;
+        case 28:;
+        return 0;
+        case 29:;
+        return 0;
+        case 30:;
+        return 1;
+        case 31:;
+        return 0;
+        default:;
+        return 0;
     }
 }
-static byte* decode_instruction(byte* ptr, x64_Instruction* inst) {
-    *inst = (x64_Instruction) {0};
+static x64_Operand E(uint32 opsize, uint32 adsize, ModRM_SIB_disp modrm) {
+    if (modrm.rip_relative) return (x64_Operand) {.kind = 3, .reg = 65, .imm_value = (int64)modrm.disp, .opsize = opsize};
+    if (modrm.mem_is_register) return (x64_Operand) {.kind = 2, .reg = select_gpr(modrm.mem, opsize), .opsize = opsize};
+    return (x64_Operand) {.kind = 3, .reg = select_gpr(modrm.mem, adsize), .index = select_gpr(modrm.idx, adsize), .scale = modrm.scale, .imm_value = (int64)modrm.disp, .opsize = opsize};
+}
+static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte opcode_reg, byte encoding, ModRM_SIB_disp modrm) {
+    uint32 b = 1;
+    uint32 w = 2;
+    uint32 z = (opsize <= 4) ? opsize : 4;
+    uint32 v = opsize;
+    /* local procedure */;
+    switch (encoding) {
+        default:;
+        case 0:;
+        return (x64_Operand) {0};
+        case 1:;
+        return E(b, adsize, modrm);
+        case 2:;
+        return E(w, adsize, modrm);
+        case 3:;
+        return E(v, adsize, modrm);
+        case 4:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(modrm.reg, b), .opsize = b};
+        case 5:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(modrm.reg, v), .opsize = v};
+        case 6:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(0, b), .opsize = b};
+        case 7:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(0, z), .opsize = z};
+        case 8:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(0, v), .opsize = v};
+        case 9:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(opcode_reg, b), .opsize = b};
+        case 10:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(opcode_reg, v), .opsize = v};
+        case 11:;
+        return (x64_Operand) {.kind = 1, .imm_value = read_unsigned_imm(pptr, b), .opsize = b};
+        case 12:;
+        return (x64_Operand) {.kind = 1, .imm_value = read_unsigned_imm(pptr, w), .opsize = w};
+        case 13:;
+        return (x64_Operand) {.kind = 1, .imm_value = read_unsigned_imm(pptr, z), .opsize = z};
+        case 14:;
+        return (x64_Operand) {.kind = 1, .imm_value = read_unsigned_imm(pptr, v), .opsize = v};
+        case 15:;
+        return (x64_Operand) {0};
+        case 16:;
+        return (x64_Operand) {0};
+        case 17:;
+        return (x64_Operand) {0};
+        case 18:;
+        return (x64_Operand) {0};
+        case 19:;
+        return (x64_Operand) {0};
+        case 20:;
+        return (x64_Operand) {0};
+        case 21:;
+        return (x64_Operand) {0};
+        case 22:;
+        return (x64_Operand) {0};
+        case 23:;
+        return (x64_Operand) {0};
+        case 24:;
+        return (x64_Operand) {0};
+        case 25:;
+        return (x64_Operand) {0};
+        case 26:;
+        return (x64_Operand) {0};
+        case 27:;
+        return (x64_Operand) {0};
+        case 28:;
+        return (x64_Operand) {0};
+        case 29:;
+        return (x64_Operand) {.kind = 1, .imm_value = 1};
+        case 30:;
+        return (x64_Operand) {0};
+        case 31:;
+        return (x64_Operand) {0};
+    }
+}
+static x64_Instruction decode_instruction(byte** pptr) {
+    x64_Instruction inst = (x64_Instruction) {0};
+    byte* ptr = *pptr;
     uint32 operand_count = 0;
     uint32 opsize = 4;
     uint32 adsize = 8;
@@ -4989,29 +5135,20 @@ static byte* decode_instruction(byte* ptr, x64_Instruction* inst) {
         opcode = *ptr++;
         op = x64_opcode_operation[opcode];
     }
-    inst->operation = op;
-    byte opcode_reg = (bit_ext_reg | (opcode & 7));
-    byte modrm_byte_present = x64_opcode_modrm[opcode];
-    if (modrm_byte_present) {
-        ModRM_SIB_disp m = (ModRM_SIB_disp) {0};
-        ptr = modrm(ptr, &m);
-        m.reg |= bit_ext_reg;
-        m.idx |= bit_ext_idx;
-        m.mem |= bit_ext_mem;
-        x64_Operand op1 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.reg, opsize)};
-        x64_Operand op2 = (x64_Operand) {0};
-        if (m.mem_is_register) op2 = (x64_Operand) {.kind = 2, .reg = reg_from_index(m.mem, opsize), .bytesize = opsize}; else op2 = (x64_Operand) {.kind = 3, .reg = reg_from_index(m.mem, adsize), .index = reg_from_index(m.idx, adsize), .scale = m.scale, .imm_value = (int64)m.disp, .bytesize = opsize};
-        inst->operands[operand_count++] = op1;
-        inst->operands[operand_count++] = op2;
+    inst.operation = op;
+    byte opcode_reg = (bit_ext_mem | (opcode & 7));
+    byte op0_encoding = x64_operand0[opcode];
+    byte op1_encoding = x64_operand1[opcode];
+    ModRM_SIB_disp modrm = (ModRM_SIB_disp) {0};
+    if (has_modrm(op0_encoding) || has_modrm(op1_encoding)) {
+        modrm = decode_modrm(&ptr);
     }
-    /* local procedure */;
-    uint32 imm_size = x64_opcode_immediate[opcode];
-    uint32 imm_bytes = bytesize(imm_size, opsize);
-    if (imm_bytes) {
-        uint64 imm = read_unsigned_imm(&ptr, imm_bytes);
-        inst->operands[operand_count++] = (x64_Operand) {.kind = 1, .imm_value = imm, .bytesize = imm_bytes};
-    }
-    return ptr;
+    modrm.reg |= bit_ext_reg;
+    modrm.idx |= bit_ext_idx;
+    modrm.mem |= bit_ext_mem;
+    inst.operands[0] = make_operand(&ptr, opsize, adsize, opcode_reg, op0_encoding, modrm);
+    inst.operands[1] = make_operand(&ptr, opsize, adsize, opcode_reg, op1_encoding, modrm);
+    return inst;
 }
 static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
     byte* ptr = *pptr;
@@ -5035,19 +5172,20 @@ static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
     assert(0);
     return 0;
 }
-static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
+static ModRM_SIB_disp decode_modrm(byte** pptr) {
+    byte* ptr = *pptr;
     byte mod_reg_rm = *ptr++;
     byte mod = ((mod_reg_rm & 192) >> 6);
     byte reg = ((mod_reg_rm & 56) >> 3);
     byte rm = ((mod_reg_rm & 7) >> 0);
-    *m = (ModRM_SIB_disp) {.reg = reg, .mem = rm};
+    ModRM_SIB_disp m = (ModRM_SIB_disp) {.reg = reg, .mem = rm};
     uint32 disp_bytes = 0;
     switch (mod) {
         case 0:;
         {
             if (rm == 5) {
                 disp_bytes = 4;
-                m->mem = -1;
+                m.rip_relative = 1;
             }
         }
         break;
@@ -5059,8 +5197,9 @@ static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
         break;
         case 3:;
         {
-            m->mem_is_register = 1;
-            return ptr;
+            m.mem_is_register = 1;
+            *pptr = ptr;
+            return m;
         }
     }
     if (rm == 4) {
@@ -5068,25 +5207,26 @@ static byte* modrm(byte* ptr, ModRM_SIB_disp* m) {
         byte ss = ((sib & 192) >> 6);
         byte index = ((sib & 56) >> 3);
         byte base = ((sib & 7) >> 0);
-        m->scale = (1 << ss);
-        if (index == 4) m->scale = 0;
-        m->mem = base;
-        m->idx = index;
+        m.scale = (1 << ss);
+        if (index == 4) m.scale = 0;
+        m.mem = base;
+        m.idx = index;
     }
     switch (disp_bytes) {
         case 0:;
         break;
         case 1:;
-        m->disp = (int32)*ptr++;
+        m.disp = (int32)*ptr++;
         break;
         case 4:;
-        m->disp = (int32)*((uint32*)ptr);
+        m.disp = (int32)*((uint32*)ptr);
         ptr += 4;
         break;
         default:;
         break;
     }
-    return ptr;
+    *pptr = ptr;
+    return m;
 }
 static string stringify_overload1(x64_Instruction inst, StringBuilder* sb) {
     char* opr = to_string_overload9(inst.operation);
@@ -5139,11 +5279,17 @@ static string stringify_overload2(x64_Operand op, StringBuilder* sb) {
         sb_append_overload1(sb, to_string_overload10(op.reg));
         break;
         case 3:;
-        char* typ = asm_types[op.bytesize];
+        char* typ = asm_types[op.opsize];
         sb_append_overload1(sb, typ);
         sb_append_overload1(sb, " ");
         sb_append_overload1(sb, "ptr [");
         sb_append_overload1(sb, to_string_overload10(op.reg));
+        if (op.scale != 0) {
+            sb_append_overload1(sb, " + ");
+            sb_append_overload1(sb, to_string_overload10(op.index));
+            sb_append_overload1(sb, "*");
+            sb_append_overload2(sb, to_string_overload1(op.scale));
+        }
         if (op.imm_value != 0) {
             sb_append_overload1(sb, " + ");
             imm(sb, (uint64)op.imm_value);
@@ -5154,8 +5300,8 @@ static string stringify_overload2(x64_Operand op, StringBuilder* sb) {
     return to_string_overload8(sb);
 }
 static void test(Array code, char* exp_str) {
-    x64_Instruction inst = (x64_Instruction) {0};
-    decode_instruction(code.data, &inst);
+    byte* ptr = code.data;
+    x64_Instruction inst = decode_instruction(&ptr);
     char* got_str = stringify_overload1(inst, temp_builder()).chars;
     uint32 failed = strcmp(got_str, exp_str);
     if (failed) printf("\033[1;31m"); else printf("\033[1;32m");
@@ -5384,6 +5530,7 @@ static void run_tests() {
     test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 151}}, "xchg ax, r15w");
     printf("%s", "call\n");
     test((Array)(Array) { .length = 5, .data = (byte[]){232, 16, 0, 0, 0}}, "call 0x10");
+    test((Array)(Array) { .length = 7, .data = (byte[]){138, 4, 37, 1, 0, 0, 0}}, "mov al, byte ptr ds:0x1");
     printf("Summary: %d/%d tests passed. Failed: %d\n", (total_test_count - total_failed), total_test_count, total_failed);
 }
 static void __static_init() {

@@ -51,6 +51,7 @@ typedef struct Image_Nt_Headers Image_Nt_Headers;
 typedef struct Image_Optional_Header_64 Image_Optional_Header_64;
 typedef struct x64_Instruction x64_Instruction;
 typedef struct x64_Operand x64_Operand;
+typedef struct x64_Operand_Encoding x64_Operand_Encoding;
 typedef struct ModRM_SIB_disp ModRM_SIB_disp;
 
 // Enums
@@ -224,13 +225,16 @@ struct x64_Operand { // deps = 0
     int64 imm_value;
     uint32 opsize;
 };
+struct x64_Operand_Encoding { // deps = 0
+    byte operands[4];
+};
 struct ModRM_SIB_disp { // deps = 0
+    int64 disp;
     byte reg;
     byte mem;
     byte idx;
     bool mem_is_register;
     uint32 scale;
-    int32 disp;
     bool rip_relative;
 };
 struct SR_Token { // deps = 1
@@ -551,7 +555,7 @@ static TypeInfo rtti_types[] = {
         .fields = (Array) { .length = 3, .data = (StructField[]){
             {.type_info = (rtti_types+6), .name = "nLength", .offset = 0},
             {.type_info = (rtti_types+0), .name = "lpSecurityDescriptor", .offset = 8},
-            {.type_info = (rtti_types+56), .name = "bInheritHandle", .offset = 16},
+            {.type_info = (rtti_types+57), .name = "bInheritHandle", .offset = 16},
         }},
     },
     {
@@ -566,7 +570,7 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+0), .name = "inner_type", .offset = 8},
             {.type_info = (rtti_types+7), .name = "bytesize", .offset = 16},
             {.type_info = (rtti_types+6), .name = "alignment", .offset = 24},
-            {.type_info = (rtti_types+48), .name = "kind", .offset = 28},
+            {.type_info = (rtti_types+49), .name = "kind", .offset = 28},
             {.type_info = (rtti_types+6), .name = "num_ptr", .offset = 32},
             {.type_info = (rtti_types+0), .name = "fields", .offset = 40},
             {.type_info = (rtti_types+0), .name = "entries", .offset = 56},
@@ -751,7 +755,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 4, .data = (StructField[]){
-            {.type_info = (rtti_types+49), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+50), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "row", .offset = 4},
             {.type_info = (rtti_types+6), .name = "col", .offset = 8},
             {.type_info = (rtti_types+35), .name = "data", .offset = 16},
@@ -779,7 +783,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 10, .data = (StructField[]){
-            {.type_info = (rtti_types+50), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+51), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "ptr_degree", .offset = 4},
             {.type_info = (rtti_types+34), .name = "token", .offset = 8},
             {.type_info = (rtti_types+34), .name = "name", .offset = 64},
@@ -851,8 +855,8 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 2, .data = (StructField[]){
-            {.type_info = (rtti_types+49), .name = "token_kind", .offset = 0},
-            {.type_info = (rtti_types+50), .name = "node_kind", .offset = 4},
+            {.type_info = (rtti_types+50), .name = "token_kind", .offset = 0},
+            {.type_info = (rtti_types+51), .name = "node_kind", .offset = 4},
         }},
     },
     {
@@ -932,7 +936,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 2, .data = (StructField[]){
-            {.type_info = (rtti_types+52), .name = "operation", .offset = 0},
+            {.type_info = (rtti_types+53), .name = "operation", .offset = 0},
             {.type_info = (rtti_types+0), .name = "operands", .offset = 8},
         }},
     },
@@ -944,29 +948,40 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 6, .data = (StructField[]){
-            {.type_info = (rtti_types+54), .name = "kind", .offset = 0},
-            {.type_info = (rtti_types+53), .name = "reg", .offset = 4},
-            {.type_info = (rtti_types+53), .name = "index", .offset = 8},
+            {.type_info = (rtti_types+55), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+54), .name = "reg", .offset = 4},
+            {.type_info = (rtti_types+54), .name = "index", .offset = 8},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
             {.type_info = (rtti_types+3), .name = "imm_value", .offset = 16},
             {.type_info = (rtti_types+6), .name = "opsize", .offset = 24},
         }},
     },
     {
+        .name = "x64_Operand_Encoding",
+        .inner_type = 0,
+        .bytesize = 0,
+        .alignment = 1,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 1, .data = (StructField[]){
+            {.type_info = (rtti_types+0), .name = "operands", .offset = 0},
+        }},
+    },
+    {
         .name = "ModRM_SIB_disp",
         .inner_type = 0,
-        .bytesize = 13,
-        .alignment = 4,
+        .bytesize = 17,
+        .alignment = 8,
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 7, .data = (StructField[]){
-            {.type_info = (rtti_types+57), .name = "reg", .offset = 0},
-            {.type_info = (rtti_types+57), .name = "mem", .offset = 1},
-            {.type_info = (rtti_types+57), .name = "idx", .offset = 2},
-            {.type_info = (rtti_types+55), .name = "mem_is_register", .offset = 3},
-            {.type_info = (rtti_types+6), .name = "scale", .offset = 4},
-            {.type_info = (rtti_types+2), .name = "disp", .offset = 8},
-            {.type_info = (rtti_types+55), .name = "rip_relative", .offset = 12},
+            {.type_info = (rtti_types+3), .name = "disp", .offset = 0},
+            {.type_info = (rtti_types+58), .name = "reg", .offset = 8},
+            {.type_info = (rtti_types+58), .name = "mem", .offset = 9},
+            {.type_info = (rtti_types+58), .name = "idx", .offset = 10},
+            {.type_info = (rtti_types+56), .name = "mem_is_register", .offset = 11},
+            {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
+            {.type_info = (rtti_types+56), .name = "rip_relative", .offset = 16},
         }},
     },
     {
@@ -1413,6 +1428,7 @@ static TypeInfo rtti_types[] = {
 
 // Forward declarations
 void __main();
+static void HELLO();
 int32 fopen_s(FILE** stream, char* filename, char* mode);
 int32 fclose(FILE* stream);
 int32 fseek(FILE* stream, int32 offset, int32 origin);
@@ -1872,19 +1888,23 @@ static bool has_modrm(byte encoding);
 static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte opcode_reg, byte encoding, ModRM_SIB_disp modrm);
 static x64_Instruction decode_instruction(byte** pptr);
 static uint64 read_unsigned_imm(byte** pptr, uint32 size);
+static int64 read_signed_imm(byte** pptr, uint32 size);
 static ModRM_SIB_disp decode_modrm(byte** pptr);
 static string stringify_overload1(x64_Instruction inst, StringBuilder* sb);
 static char hex_nibble(byte val);
 static string hex_overload1(uint64 val);
 static string hex_overload2(uint64 val, StringBuilder* sb);
 static string stringify_overload2(x64_Operand op, StringBuilder* sb);
+static void cfg(void* entryptr);
 static void run_tests();
 
 // Declarations
 static Array pog_all_ops = (Array) { .length = 6, .data = (Array[]){(Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {23, 13}, (Pog_Binary_Op) {24, 14}}}, (Array) { .length = 6, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {60, 7}, (Pog_Binary_Op) {61, 8}, (Pog_Binary_Op) {62, 9}, (Pog_Binary_Op) {63, 10}, (Pog_Binary_Op) {64, 11}, (Pog_Binary_Op) {65, 12}}}, (Array) { .length = 1, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {42, 6}}}, (Array) { .length = 5, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {49, 15}, (Pog_Binary_Op) {50, 16}, (Pog_Binary_Op) {51, 17}, (Pog_Binary_Op) {52, 18}, (Pog_Binary_Op) {53, 19}}}, (Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {67, 1}, (Pog_Binary_Op) {68, 2}}}, (Array) { .length = 3, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {69, 3}, (Pog_Binary_Op) {70, 4}, (Pog_Binary_Op) {71, 5}}}}};
-static x64_Operation x64_opcode_operation[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 43, 0, 6, 6, 6, 6, 6, 6, 43, 0, 7, 7, 7, 7, 7, 7, 43, 0, 8, 8, 8, 8, 8, 8, 43, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 43, 43, 43, 43, 10, 13, 10, 13, 41, 41, 42, 42, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 43, 32, 43, 43, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
-static byte x64_operand0[256] = {1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 1, 3, 4, 5, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 5, 0, 0, 0, 0, 13, 5, 11, 5, 15, 16, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 4, 5, 3, 5, 21, 3, 8, 8, 8, 8, 8, 8, 8, 8, 0, 0, 0, 0, 22, 22, 0, 0, 6, 8, 23, 24, 15, 17, 25, 27, 6, 8, 15, 17, 6, 8, 6, 8, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 1, 3, 12, 0, 0, 0, 1, 3, 12, 0, 12, 0, 0, 11, 0, 0, 1, 3, 1, 3, 0, 0, 0, 0, 28, 28, 28, 28, 28, 28, 28, 28, 19, 19, 19, 19, 6, 7, 11, 11, 20, 20, 0, 19, 6, 7, 18, 18, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0};
-static byte x64_operand1[256] = {4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 4, 5, 1, 3, 11, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 3, 18, 18, 25, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 13, 0, 11, 4, 5, 4, 5, 4, 5, 1, 3, 21, 30, 2, 0, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 23, 24, 6, 8, 25, 27, 15, 17, 11, 13, 6, 8, 25, 27, 15, 17, 11, 11, 11, 11, 11, 11, 11, 11, 14, 14, 14, 14, 14, 14, 14, 14, 11, 11, 0, 0, 0, 0, 11, 13, 11, 0, 0, 0, 0, 0, 0, 0, 29, 29, 31, 31, 0, 0, 0, 0, 28, 28, 28, 28, 28, 28, 28, 28, 0, 0, 0, 0, 11, 11, 6, 7, 0, 0, 0, 0, 18, 18, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static x64_Operation x64_primary_opcode_map[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 43, 0, 6, 6, 6, 6, 6, 6, 43, 0, 7, 7, 7, 7, 7, 7, 43, 0, 8, 8, 8, 8, 8, 8, 43, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 43, 43, 43, 43, 10, 13, 10, 13, 41, 41, 42, 42, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 43, 32, 43, 43, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
+static x64_Operation x64_secondary_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static x64_Operation x64_0F_38_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static x64_Operation x64_0F_3A_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static x64_Operand_Encoding x64_operand_encoding[256] = {(x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {13}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {11}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {15, 18}, (x64_Operand_Encoding) {16, 18}, (x64_Operand_Encoding) {18, 25}, (x64_Operand_Encoding) {18, 26}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 13}, (x64_Operand_Encoding) {1}, (x64_Operand_Encoding) {3, 11}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {3, 21}, (x64_Operand_Encoding) {5, 30}, (x64_Operand_Encoding) {21, 2}, (x64_Operand_Encoding) {3}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {22}, (x64_Operand_Encoding) {22}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {6, 23}, (x64_Operand_Encoding) {8, 24}, (x64_Operand_Encoding) {23, 6}, (x64_Operand_Encoding) {24, 8}, (x64_Operand_Encoding) {15, 25}, (x64_Operand_Encoding) {17, 27}, (x64_Operand_Encoding) {25, 15}, (x64_Operand_Encoding) {27, 17}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {15, 6}, (x64_Operand_Encoding) {17, 8}, (x64_Operand_Encoding) {6, 25}, (x64_Operand_Encoding) {8, 27}, (x64_Operand_Encoding) {6, 15}, (x64_Operand_Encoding) {8, 17}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 11}, (x64_Operand_Encoding) {12}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 13}, (x64_Operand_Encoding) {12, 11}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {12}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {11}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 29}, (x64_Operand_Encoding) {3, 29}, (x64_Operand_Encoding) {1, 31}, (x64_Operand_Encoding) {3, 31}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {7, 11}, (x64_Operand_Encoding) {11, 6}, (x64_Operand_Encoding) {11, 7}, (x64_Operand_Encoding) {20}, (x64_Operand_Encoding) {20}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {6, 18}, (x64_Operand_Encoding) {7, 18}, (x64_Operand_Encoding) {18, 6}, (x64_Operand_Encoding) {18, 7}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1}, (x64_Operand_Encoding) {3}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}};
 static StringBuilder* temps;
 static uint32 rotation = 0;
 static uint32 total_test_count = 0;
@@ -1893,6 +1913,15 @@ static uint32 total_failed = 0;
 // Implementations
 void __main() {
     run_tests();
+    cfg(HELLO);
+}
+static void HELLO() {
+    int32 i = 0;
+    if (i == 0) {
+        printf("%s", "zero\n");
+    } else {
+        printf("%s", "non-zero\n");
+    }
 }
 int32 fopen_s(FILE** stream, char* filename, char* mode);
 int32 fclose(FILE* stream);
@@ -5022,9 +5051,9 @@ static bool has_modrm(byte encoding) {
     }
 }
 static x64_Operand E(uint32 opsize, uint32 adsize, ModRM_SIB_disp modrm) {
-    if (modrm.rip_relative) return (x64_Operand) {.kind = 3, .reg = 65, .imm_value = (int64)modrm.disp, .opsize = opsize};
+    if (modrm.rip_relative) return (x64_Operand) {.kind = 3, .reg = 65, .imm_value = modrm.disp, .opsize = opsize};
     if (modrm.mem_is_register) return (x64_Operand) {.kind = 2, .reg = select_gpr(modrm.mem, opsize), .opsize = opsize};
-    return (x64_Operand) {.kind = 3, .reg = select_gpr(modrm.mem, adsize), .index = select_gpr(modrm.idx, adsize), .scale = modrm.scale, .imm_value = (int64)modrm.disp, .opsize = opsize};
+    return (x64_Operand) {.kind = 3, .reg = select_gpr(modrm.mem, adsize), .index = select_gpr(modrm.idx, adsize), .scale = modrm.scale, .imm_value = modrm.disp, .opsize = opsize};
 }
 static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte opcode_reg, byte encoding, ModRM_SIB_disp modrm) {
     uint32 b = 1;
@@ -5073,9 +5102,9 @@ static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte 
         case 18:;
         return (x64_Operand) {0};
         case 19:;
-        return (x64_Operand) {0};
+        return (x64_Operand) {.kind = 1, .imm_value = read_signed_imm(pptr, b), .opsize = b};
         case 20:;
-        return (x64_Operand) {0};
+        return (x64_Operand) {.kind = 1, .imm_value = read_signed_imm(pptr, z), .opsize = z};
         case 21:;
         return (x64_Operand) {0};
         case 22:;
@@ -5095,7 +5124,7 @@ static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte 
         case 29:;
         return (x64_Operand) {.kind = 1, .imm_value = 1};
         case 30:;
-        return (x64_Operand) {0};
+        if (modrm.mem_is_register) return (x64_Operand) {0}; else return E(v, adsize, modrm);
         case 31:;
         return (x64_Operand) {0};
     }
@@ -5122,32 +5151,45 @@ static x64_Instruction decode_instruction(byte** pptr) {
         adsize = 4;
         break;
     }
-    byte opcode = *ptr++;
-    x64_Operation op = x64_opcode_operation[opcode];
     byte bit_ext_reg = 0;
     byte bit_ext_idx = 0;
     byte bit_ext_mem = 0;
-    if (op == 9) {
-        if (opcode & 8) opsize = 8;
-        bit_ext_reg = ((opcode & 4) << 1);
-        bit_ext_idx = ((opcode & 2) << 2);
-        bit_ext_mem = ((opcode & 1) << 3);
-        opcode = *ptr++;
-        op = x64_opcode_operation[opcode];
+    if ((*ptr & 240) == 64) {
+        byte rex = *ptr++;
+        if (rex & 8) opsize = 8;
+        bit_ext_reg = ((rex & 4) << 1);
+        bit_ext_idx = ((rex & 2) << 2);
+        bit_ext_mem = ((rex & 1) << 3);
     }
-    inst.operation = op;
+    byte opcode = *ptr++;
+    if ((opcode & 248) == 216) {
+    }
+    x64_Operation* opcode_map = x64_primary_opcode_map;
+    if (opcode == 15) {
+        opcode = *ptr++;
+        if (opcode == 56) {
+            opcode = *ptr++;
+            opcode_map = x64_0F_38_opcode_map;
+        } else if (opcode == 58) {
+            opcode = *ptr++;
+            opcode_map = x64_0F_3A_opcode_map;
+        } else {
+            opcode_map = x64_secondary_opcode_map;
+        }
+    }
+    inst.operation = opcode_map[opcode];
     byte opcode_reg = (bit_ext_mem | (opcode & 7));
-    byte op0_encoding = x64_operand0[opcode];
-    byte op1_encoding = x64_operand1[opcode];
+    x64_Operand_Encoding encoding = x64_operand_encoding[opcode];
     ModRM_SIB_disp modrm = (ModRM_SIB_disp) {0};
-    if (has_modrm(op0_encoding) || has_modrm(op1_encoding)) {
+    for (int32 it = 0; it < 4; it++) if (has_modrm(encoding.operands[it])) {
         modrm = decode_modrm(&ptr);
+        break;
     }
     modrm.reg |= bit_ext_reg;
     modrm.idx |= bit_ext_idx;
     modrm.mem |= bit_ext_mem;
-    inst.operands[0] = make_operand(&ptr, opsize, adsize, opcode_reg, op0_encoding, modrm);
-    inst.operands[1] = make_operand(&ptr, opsize, adsize, opcode_reg, op1_encoding, modrm);
+    for (int32 it = 0; it < 4; it++) inst.operands[it] = make_operand(&ptr, opsize, adsize, opcode_reg, encoding.operands[it], modrm);
+    *pptr = ptr;
     return inst;
 }
 static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
@@ -5155,7 +5197,7 @@ static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
     switch (size) {
         default:;
         case 0:;
-        break;
+        return 0;
         case 1:;
         (*pptr) += 1;
         return (uint64)*((uint8*)ptr);
@@ -5169,8 +5211,26 @@ static uint64 read_unsigned_imm(byte** pptr, uint32 size) {
         (*pptr) += 8;
         return (uint64)*((uint64*)ptr);
     }
-    assert(0);
-    return 0;
+}
+static int64 read_signed_imm(byte** pptr, uint32 size) {
+    byte* ptr = *pptr;
+    switch (size) {
+        default:;
+        case 0:;
+        return 0;
+        case 1:;
+        (*pptr) += 1;
+        return (int64)*((int8*)ptr);
+        case 2:;
+        (*pptr) += 2;
+        return (int64)*((int16*)ptr);
+        case 4:;
+        (*pptr) += 4;
+        return (int64)*((int32*)ptr);
+        case 8:;
+        (*pptr) += 8;
+        return (int64)*((int64*)ptr);
+    }
 }
 static ModRM_SIB_disp decode_modrm(byte** pptr) {
     byte* ptr = *pptr;
@@ -5212,19 +5272,7 @@ static ModRM_SIB_disp decode_modrm(byte** pptr) {
         m.mem = base;
         m.idx = index;
     }
-    switch (disp_bytes) {
-        case 0:;
-        break;
-        case 1:;
-        m.disp = (int32)*ptr++;
-        break;
-        case 4:;
-        m.disp = (int32)*((uint32*)ptr);
-        ptr += 4;
-        break;
-        default:;
-        break;
-    }
+    m.disp = read_signed_imm(&ptr, disp_bytes);
     *pptr = ptr;
     return m;
 }
@@ -5298,6 +5346,22 @@ static string stringify_overload2(x64_Operand op, StringBuilder* sb) {
         break;
     }
     return to_string_overload8(sb);
+}
+static void cfg(void* entryptr) {
+    byte* ptr = entryptr;
+    for (int32 it = 0; it < 100; it++) {
+        byte* start = ptr;
+        x64_Instruction inst = decode_instruction(&ptr);
+        uint32 instbytes = (uint32)(ptr - start);
+        printf("%p", start);
+        for (int32 it = 0; it < 15; it++) if (it < instbytes) printf(" %02x", start[it]); else printf("   ");
+        char* dasm = stringify_overload1(inst, temp_builder()).chars;
+        printf("%s\n", dasm);
+        if (inst.operation == 31) {
+            byte* jmp_loc = (ptr + inst.operands[0].imm_value);
+        }
+        if (inst.operation == 21) break;
+    }
 }
 static void test(Array code, char* exp_str) {
     byte* ptr = code.data;

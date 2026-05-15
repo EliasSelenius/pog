@@ -21,6 +21,7 @@ void main() {
 
     run_tests();
 
+    cfg(HELLO);
 
     // char* file_buffer = fileread("src/main.pog");
     // let unit = parse(file_buffer);
@@ -30,4 +31,14 @@ void main() {
     // print(to_string(sb));
     // sb_free(sb);
 
+}
+
+void HELLO() {
+    int32 i = 0;
+
+    if i == 0 {
+        print("zero\n");
+    } else {
+        print("non-zero\n");
+    }
 }

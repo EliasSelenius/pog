@@ -122,24 +122,84 @@ struct x64_Operand {
 }
 
 
-x64_Operation[0x100] x64_opcode_operation = { // TODO: make "prefix" more descriptive
-    //         0x00      0x01      0x02      0x03      0x04      0x05      0x06      0x07      0x08      0x09      0x0A      0x0B      0x0C      0x0D      0x0E      0x0F
-    /*00*/    .add,     .add,     .add,     .add,     .add,     .add,     .none,    .none,    .or,      .or,      .or,      .or,      .or,      .or,      .none,    .none,
-    /*10*/    .adc,     .adc,     .adc,     .adc,     .adc,     .adc,     .none,    .none,    .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .none,    .none,
-    /*20*/    .and,     .and,     .and,     .and,     .and,     .and,     .prefix,  .none,    .sub,     .sub,     .sub,     .sub,     .sub,     .sub,     .prefix,  .none,
-    /*30*/    .xor,     .xor,     .xor,     .xor,     .xor,     .xor,     .prefix,  .none,    .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .prefix,  .none,
-    /*40*/    .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,
-    /*50*/    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,
-    /*60*/    .none,    .none,    .none,    .movsxd,  .prefix,  .prefix,  .prefix,  .prefix,  .push,    .imul,    .push,    .imul,    .ins,     .ins,     .outs,    .outs,
-    /*70*/    .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,
-    /*80*/    .none,    .none,    .none,    .none,    .test,    .test,    .xchg,    .xchg,    .mov,     .mov,     .mov,     .mov,     .mov,     .lea,     .mov,     .none,
-    /*90*/    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .none,    .none,    .none,    .none,    .none,    .none,    .shaf,    .lahf,
-    /*a0*/    .mov,     .mov,     .mov,     .mov,     .none,    .none,    .none,    .none,    .test,    .test,    .none,    .none,    .none,    .none,    .none,    .none,
-    /*b0*/    .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,
-    /*c0*/    .none,    .none,    .ret,     .ret,     .none,    .none,    .mov,     .mov,     .enter,   .leave,   .ret,     .ret,     .int3,    .int,     .none,    .none,
-    /*d0*/    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,
-    /*e0*/    .none,    .none,    .loop,    .none,    .in,      .in,      .out,     .out,     .call,    .jmp,     .jmp,     .jmp,     .in,      .in,      .out,     .out,
-    /*f0*/    .prefix,  .int1,    .prefix,  .prefix,  .hlt,     .cmc,     .none,    .none,    .clc,     .stc,     .cli,     .sti,     .cld,     .std,     .none,    .none,
+x64_Operation[0x100] x64_primary_opcode_map = { // TODO: make "prefix" more descriptive
+//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
+/*00*/  .add,     .add,     .add,     .add,     .add,     .add,     .none,    .none,    .or,      .or,      .or,      .or,      .or,      .or,      .none,    .none,
+/*10*/  .adc,     .adc,     .adc,     .adc,     .adc,     .adc,     .none,    .none,    .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .none,    .none,
+/*20*/  .and,     .and,     .and,     .and,     .and,     .and,     .prefix,  .none,    .sub,     .sub,     .sub,     .sub,     .sub,     .sub,     .prefix,  .none,
+/*30*/  .xor,     .xor,     .xor,     .xor,     .xor,     .xor,     .prefix,  .none,    .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .prefix,  .none,
+/*40*/  .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,
+/*50*/  .push,    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,
+/*60*/  .none,    .none,    .none,    .movsxd,  .prefix,  .prefix,  .prefix,  .prefix,  .push,    .imul,    .push,    .imul,    .ins,     .ins,     .outs,    .outs,
+/*70*/  .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,
+/*80*/  .none,    .none,    .none,    .none,    .test,    .test,    .xchg,    .xchg,    .mov,     .mov,     .mov,     .mov,     .mov,     .lea,     .mov,     .none,
+/*90*/  .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .none,    .none,    .none,    .none,    .none,    .none,    .shaf,    .lahf,
+/*A0*/  .mov,     .mov,     .mov,     .mov,     .none,    .none,    .none,    .none,    .test,    .test,    .none,    .none,    .none,    .none,    .none,    .none,
+/*B0*/  .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,
+/*C0*/  .none,    .none,    .ret,     .ret,     .none,    .none,    .mov,     .mov,     .enter,   .leave,   .ret,     .ret,     .int3,    .int,     .none,    .none,
+/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,
+/*E0*/  .none,    .none,    .loop,    .none,    .in,      .in,      .out,     .out,     .call,    .jmp,     .jmp,     .jmp,     .in,      .in,      .out,     .out,
+/*F0*/  .prefix,  .int1,    .prefix,  .prefix,  .hlt,     .cmc,     .none,    .none,    .clc,     .stc,     .cli,     .sti,     .cld,     .std,     .none,    .none,
+};
+
+x64_Operation[0x100] x64_secondary_opcode_map = {
+//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
+/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+};
+
+x64_Operation[0x100] x64_0F_38_opcode_map = {
+//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
+/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+};
+
+x64_Operation[0x100] x64_0F_3A_opcode_map = {
+//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
+/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
+/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
 };
 
 /* legend:
@@ -196,45 +256,33 @@ const I1   = 29; // the constant 1
 const M    = 30; // the ModR/M byte may refer only to memory
 const CL   = 31; // CL byte register
 
-byte[0x100] x64_operand0 = {
-//     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-/*00*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
-/*10*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
-/*20*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
-/*30*/ Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,   Eb,  Ev,  Gb,  Gv,  AL,  rAX, 0,   0,
-/*40*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-/*50*/ colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,
-/*60*/ 0,   0,   0,   Gv,  0,   0,   0,   0,   Iz,  Gv,  Ib,  Gv,  Yb,  Yz,  DX,  DX,
-/*70*/ Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,  Jb,
-/*80*/ Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Eb,  Ev,  Gb,  Gv,  Ev,  Gv,  Sw,  Ev,
-/*90*/ rAX, rAX, rAX, rAX, rAX, rAX, rAX, rAX, 0,   0,   0,   0,   Fv,  Fv,  0,   0,
-/*A0*/ AL,  rAX, Ob,  Ov,  Yb,  Yv,  Xb,  Xv,  AL,  rAX, Yb,  Yv,  AL,  rAX, AL,  rAX,
-/*B0*/ colb,colb,colb,colb,colb,colb,colb,colb,colv,colv,colv,colv,colv,colv,colv,colv,
-/*C0*/ Eb,  Ev,  Iw,  0,   0,   0,   Eb,  Ev,  Iw,  0,   Iw,  0,   0,   Ib,  0,   0,
-/*D0*/ Eb,  Ev,  Eb,  Ev,  0,   0,   0,   0,   esc, esc, esc, esc, esc, esc, esc, esc,
-/*E0*/ Jb,  Jb,  Jb,  Jb,  AL,  eAX, Ib,  Ib,  Jz,  Jz,  0,   Jb,  AL,  eAX, DX,  DX,
-/*F0*/ 0,   0,   0,   0,   0,   0,   Eb,  Ev,  0,   0,   0,   0,   0,   0,   0,   0,
+struct x64_Operand_Encoding {
+    byte[x64_Instruction_Max_Operands] operands;
+}
+
+// TODO: look at row 50 these are clearly wrong. Go through table to sanity check. Maybe add some 50 test cases
+// TODO: 3 operand cases like imul. Make test cases for this aswell
+x64_Operand_Encoding[0x100] x64_operand_encoding = {
+//     0           1           2           3           4           5           6           7           8           9           A           B           C           D           E           F
+/*00*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
+/*10*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
+/*20*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
+/*30*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
+/*40*/ {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},
+/*50*/ {colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},
+/*60*/ {},         {},         {},         {Gv,Ev},    {},         {},         {},         {},         {Iz},       {Gv,Ev},    {Ib},       {Gv,Ev},    {Yb,DX},    {Yz,DX},    {DX,Xb},    {DX,Xz},
+/*70*/ {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},
+/*80*/ {Eb,Ib},    {Ev,Iz},    {Eb},       {Ev,Ib},    {Eb,Gb},    {Ev,Gv},    {Eb,Gb},    {Ev,Gv},    {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {Ev,Sw},    {Gv,M},     {Sw,Ew},    {Ev},
+/*90*/ {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {},         {},         {},         {},         {Fv},       {Fv},       {},         {},
+/*A0*/ {AL,Ob},    {rAX,Ov},   {Ob,AL},    {Ov,rAX},   {Yb,Xb},    {Yv,Xv},    {Xb,Yb},    {Xv,Yv},    {AL,Ib},    {rAX,Iz},   {Yb,AL},    {Yv,rAX},   {AL,Xb},    {rAX,Xv},   {AL,Yb},    {rAX,Yv},
+/*B0*/ {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},
+/*C0*/ {Eb,Ib},    {Ev,Ib},    {Iw},       {},         {},         {},         {Eb,Ib},    {Ev,Iz},    {Iw,Ib},    {},         {Iw},       {},         {},         {Ib},       {},         {},
+/*D0*/ {Eb,I1},    {Ev,I1},    {Eb,CL},    {Ev,CL},    {},         {},         {},         {},         {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},
+/*E0*/ {Jb},       {Jb},       {Jb},       {Jb},       {AL,Ib},    {eAX,Ib},   {Ib,AL},    {Ib,eAX},   {Jz},       {Jz},       {},         {Jb},       {AL,DX},    {eAX,DX},   {DX,AL},    {DX,eAX},
+/*F0*/ {},         {},         {},         {},         {},         {},         {Eb},       {Ev},       {},         {},         {},         {},         {},         {},         {},         {},
 };
 
-byte[0x100] x64_operand1 = {
-//     0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
-/*00*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
-/*10*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
-/*20*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
-/*30*/ Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,   Gb,  Gv,  Eb,  Ev,  Ib,  Iz,  0,   0,
-/*40*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-/*50*/ colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,colv,
-/*60*/ 0,   0,   0,   Ev,  0,   0,   0,   0,   0,   Ev,  0,   Ev,  DX,  DX,  Xb,  Xz,
-/*70*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-/*80*/ Ib,  Iz,  0,   Ib,  Gb,  Gv,  Gb,  Gv,  Gb,  Gv,  Eb,  Ev,  Sw,  M,   Ew,  0,
-/*90*/ colv,colv,colv,colv,colv,colv,colv,colv,0,   0,   0,   0,   0,   0,   0,   0,
-/*A0*/ Ob,  Ov,  AL,  rAX, Xb,  Xv,  Yb,  Yv,  Ib,  Iz,  AL,  rAX, Xb,  Xv,  Yb,  Yv,
-/*B0*/ Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Ib,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,  Iv,
-/*C0*/ Ib,  Ib,  0,   0,   0,   0,   Ib,  Iz,  Ib,  0,   0,   0,   0,   0,   0,   0,
-/*D0*/ I1,  I1,  CL,  CL,  0,   0,   0,   0,   esc, esc, esc, esc, esc, esc, esc, esc,
-/*E0*/ 0,   0,   0,   0,   Ib,  Ib,  AL,  eAX, 0,   0,   0,   0,   DX,  DX,  AL,  eAX,
-/*F0*/ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-};
+
 
 // TODO: encode the presence of modrm in `encoding` so encoding&0x80 is enough to determin that there is a modrm byte
 bool has_modrm(byte encoding) switch (encoding) {
@@ -281,14 +329,14 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
     uint32 v = opsize;                    // word, dword or qword
 
     x64_Operand E(uint32 opsize, adsize, ModRM_SIB_disp modrm) {
-        if modrm.rip_relative     return {kind=.Memory,   reg=.rip, imm_value=modrm.disp as int64, opsize=opsize};
+        if modrm.rip_relative     return {kind=.Memory,   reg=.rip, imm_value=modrm.disp, opsize=opsize};
         if modrm.mem_is_register  return {kind=.Register, reg=select_gpr(modrm.mem, opsize), opsize=opsize};
         return {
             kind=.Memory,
             reg=select_gpr(modrm.mem, adsize),
             index=select_gpr(modrm.idx, adsize),
             scale=modrm.scale,
-            imm_value=modrm.disp as int64,
+            imm_value=modrm.disp,
             opsize=opsize };
     }
 
@@ -312,8 +360,8 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
         case Yz:    return {};
         case Yv:    return {};
         case DX:    return {};
-        case Jb:    return {};
-        case Jz:    return {};
+        case Jb:    return {kind=.Immediate, imm_value=read_signed_imm(pptr, b), opsize=b};
+        case Jz:    return {kind=.Immediate, imm_value=read_signed_imm(pptr, z), opsize=z};
         case Sw:    return {};
         case Fv:    return {};
         case Ob:    return {};
@@ -323,7 +371,7 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
         case Xv:    return {};
         case esc:   return {};
         case I1:    return {kind=.Immediate, imm_value=1};
-        case M:     return {};
+        case M:     if modrm.mem_is_register return {}; else return E(v, adsize, modrm);
         case CL:    return {};
     }
 }
@@ -338,7 +386,6 @@ x64_Instruction decode_instruction(byte** pptr) {
     uint32 opsize = 4; // operand bytesize // TODO: some opcodes are marked d64 meaning it defaults to 64bit opsize
     uint32 adsize = 8; // address bytesize
 
-    // TODO: incorporate this with x64_opcode_operation lookup table like we do with REX prefixes
     switch (@ptr) { // TODO: check for other prefixes...
         case 0x64: ptr++; break;
         case 0x65: ptr++; break;
@@ -346,44 +393,60 @@ x64_Instruction decode_instruction(byte** pptr) {
         case 0x67: ptr++; adsize = 4; break;
     }
 
-    byte opcode = @ptr++;
-    x64_Operation op = x64_opcode_operation[opcode];
-
     byte bit_ext_reg = 0;
     byte bit_ext_idx = 0;
     byte bit_ext_mem = 0;
 
-    if op == .rex {
-        if opcode & 0b1000   opsize = 8;
-        bit_ext_reg = (opcode & 0b0100) << 1;
-        bit_ext_idx = (opcode & 0b0010) << 2;
-        bit_ext_mem = (opcode & 0b0001) << 3;
-
-        opcode = @ptr++;
-        op = x64_opcode_operation[opcode];
+    if @ptr & 0xf0 == 0x40 { // REX prefix
+        byte rex = @ptr++;
+        if rex & 0b1000   opsize = 8;
+        bit_ext_reg = (rex & 0b0100) << 1;
+        bit_ext_idx = (rex & 0b0010) << 2;
+        bit_ext_mem = (rex & 0b0001) << 3;
     }
 
-    // TODO: opcode = 0F (2-byte escape)
+    byte opcode = @ptr++;
 
-    inst.operation = op;
+
+    if opcode & 0b1111_1000 == 0xD8 { // ESC escape to coprocessor instruction set
+
+    }
+
+    x64_Operation* opcode_map = x64_primary_opcode_map;
+
+    if opcode == 0x0F { // 2-byte escape
+        opcode = @ptr++;
+
+        if opcode == 0x38 { // 3-byte escape
+            opcode = @ptr++;
+            opcode_map = x64_0F_38_opcode_map;
+        } else if opcode == 0x3A { // 3-byte escape
+            opcode = @ptr++;
+            opcode_map = x64_0F_3A_opcode_map;
+        } else {
+            opcode_map = x64_secondary_opcode_map;
+        }
+    }
+
+    inst.operation = opcode_map[opcode];
 
     byte opcode_reg = bit_ext_mem | (opcode & 0b111);
 
-    byte op0_encoding = x64_operand0[opcode];
-    byte op1_encoding = x64_operand1[opcode];
+    let encoding = x64_operand_encoding[opcode];
 
     ModRM_SIB_disp modrm = {};
-    if has_modrm(op0_encoding) or has_modrm(op1_encoding) {
+    for 0 .. x64_Instruction_Max_Operands  if has_modrm(encoding.operands[it]) {
         modrm = decode_modrm(*ptr);
+        break;
     }
 
     modrm.reg |= bit_ext_reg;
     modrm.idx |= bit_ext_idx;
     modrm.mem |= bit_ext_mem;
 
-    inst.operands[0] = make_operand(*ptr, opsize, adsize, opcode_reg, op0_encoding, modrm);
-    inst.operands[1] = make_operand(*ptr, opsize, adsize, opcode_reg, op1_encoding, modrm);
+    for 0 .. x64_Instruction_Max_Operands  inst.operands[it] = make_operand(*ptr, opsize, adsize, opcode_reg, encoding.operands[it], modrm);
 
+    @pptr = ptr;
     return inst;
 }
 
@@ -391,25 +454,35 @@ uint64 read_unsigned_imm(byte** pptr, uint32 size) {
     let ptr = @pptr;
 
     switch (size) {
-        default: case 0: break;
+        default: case 0: return 0;
 
         case 1: (@pptr)+=1; return @(ptr as uint8 *) as uint64;
         case 2: (@pptr)+=2; return @(ptr as uint16*) as uint64;
         case 4: (@pptr)+=4; return @(ptr as uint32*) as uint64;
         case 8: (@pptr)+=8; return @(ptr as uint64*) as uint64;
     }
+}
 
-    assert(false);
-    return 0;
+int64 read_signed_imm(byte** pptr, uint32 size) {
+    let ptr = @pptr;
+
+    switch (size) {
+        default: case 0: return 0;
+
+        case 1: (@pptr)+=1; return @(ptr as int8 *) as int64; // this sign extends the integer
+        case 2: (@pptr)+=2; return @(ptr as int16*) as int64;
+        case 4: (@pptr)+=4; return @(ptr as int32*) as int64;
+        case 8: (@pptr)+=8; return @(ptr as int64*) as int64;
+    }
 }
 
 struct ModRM_SIB_disp {
+    int64 disp;
     byte reg;
     byte mem;
     byte idx;
     bool mem_is_register;
     uint32 scale;
-    int32 disp;
     bool rip_relative;
 }
 
@@ -458,17 +531,7 @@ ModRM_SIB_disp decode_modrm(byte** pptr) {
         m.idx = index;
     }
 
-    switch (disp_bytes) {
-        case 0: break;
-        case 1:
-            m.disp = @ptr++ as int32;
-            break;
-        case 4:
-            m.disp = @(ptr as uint32*) as int32;
-            ptr += 4;
-            break;
-        default: break;
-    }
+    m.disp = read_signed_imm(*ptr, disp_bytes);
 
     @pptr = ptr;
     return m;
@@ -558,6 +621,30 @@ string stringify(x64_Operand op, StringBuilder* sb) {
 }
 
 
+
+void cfg(void* entryptr) {
+    byte* ptr = entryptr;
+
+    for 0 .. 100 {
+        byte* start = ptr;
+        let inst = decode_instruction(*ptr);
+        uint32 instbytes = (ptr - start) as uint32;
+
+        printf("%p", start);
+        for 0 .. 15  if (it < instbytes) printf(" %02x", start[it]); else printf("   ");
+
+        char* dasm = stringify(inst, temp_builder()).chars;
+        printf("%s\n", dasm);
+
+        if inst.operation == .jmp {
+            byte* jmp_loc = ptr + inst.operands[0].imm_value;
+            ptr = jmp_loc;
+            printf("Jumped");
+        }
+
+        if inst.operation == .ret break;
+    }
+}
 
 
 

@@ -21,7 +21,15 @@ void main() {
 
     run_tests();
 
-    cfg(HELLO);
+    // print("HELLO:\n");
+    // cfg(HELLO);
+
+
+    // print("read_exe:\n");
+    // cfg(read_exe);
+
+
+    procedure_cfg(HELLO);
 
     // char* file_buffer = fileread("src/main.pog");
     // let unit = parse(file_buffer);

@@ -269,6 +269,7 @@ const Gy   = 40; // modrm.reg
 struct x64_Opcode_Map_Entry {
     x64_Operation operation;
     byte[x64_Instruction_Max_Operands] operands;
+    uint32 grp;
 }
 
 // TODO: whats the difference between movsx (0F BE) (0F BF) and movsxd (63)
@@ -292,7 +293,7 @@ x64_Opcode_Map_Entry[0x100] x64_primary_opcode_map = {
 /*68*/ {.push,Iz},         {.imul,Gv,Ev,Iz},   {.push,Ib},         {.imul,Gv,Ev,Ib},   {.ins,Yb,DX},       {.ins,Yz,DX},       {.outs,DX,Xb},      {.outs,DX,Xz},
 /*70*/ {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},
 /*78*/ {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},
-/*80*/ {.none,Eb,Ib},      {.none,Ev,Iz},      {.none,Eb},         {.none,Ev,Ib},      {.test,Eb,Gb},      {.test,Ev,Gv},      {.xchg,Eb,Gb},      {.xchg,Ev,Gv},
+/*80*/ {.none,Eb,Ib,grp=1},{.none,Ev,Iz,grp=1},{.none,grp=1},      {.none,Ev,Ib,grp=1},{.test,Eb,Gb},      {.test,Ev,Gv},      {.xchg,Eb,Gb},      {.xchg,Ev,Gv},
 /*88*/ {.mov,Eb,Gb},       {.mov,Ev,Gv},       {.mov,Gb,Eb},       {.mov,Gv,Ev},       {.mov,Ev,Sw},       {.lea,Gv,M},        {.mov,Sw,Ew},       {.none,Ev},
 /*90*/ {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},
 /*98*/ {.none},            {.none},            {.none},            {.none},            {.none,Fv},         {.none,Fv},         {.shaf},            {.lahf},
@@ -775,11 +776,49 @@ string stringify(x64_Operand op, StringBuilder* sb) {
 }
 
 
+struct x64_BasicBlock {
+    byte* start;
 
-void cfg(void* entryptr) {
-    byte* ptr = entryptr;
+    x64_BasicBlock* bb_jump;
+    x64_BasicBlock* bb_next;
+}
 
-    for 0 .. 100 {
+struct x64_Decoder {
+    byte*[..] proc_addrs;
+
+    x64_BasicBlock* bb_start;
+}
+
+struct x64_Procedure {
+    x64_BasicBlock* start_block;
+    x64_BasicBlock*[..] blocks;
+}
+
+void procedure_cfg(byte* entryptr) {
+    x64_Procedure proc = {};
+    proc.start_block = make_bb(*proc, entryptr);
+    proc.blocks = list_create(sizeof x64_BasicBlock*);
+
+    void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
+        if bb == null return;
+
+        list_add(*proc.blocks, *bb);
+        traverse_cfg(proc, bb.bb_next);
+        traverse_cfg(proc, bb.bb_jump);
+    }
+
+    traverse_cfg(*proc, proc.start_block);
+
+    for 0 .. list_length(proc.blocks) {
+        print("Block", it, "\n");
+        print_block(proc.blocks[it])
+    }
+}
+
+void print_block(x64_BasicBlock* bb) {
+    byte* ptr = bb.start;
+
+    while true {
         byte* start = ptr;
         let inst = decode_instruction(*ptr);
         uint32 instbytes = (ptr - start) as uint32;
@@ -790,13 +829,72 @@ void cfg(void* entryptr) {
         char* dasm = stringify(inst, temp_builder()).chars;
         printf("%s\n", dasm);
 
-        if inst.operation == .jmp {
-            byte* jmp_loc = ptr + inst.operands[0].imm_value;
-            ptr = jmp_loc;
-            printf("Jumped\n");
+        switch inst.operation {
+            case .Jcc:
+            case .jmp:
+            case .ret: return;
         }
+    }
+}
 
-        if inst.operation == .ret break;
+
+x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr) {
+    x64_BasicBlock* bb = alloc x64_BasicBlock;
+    @bb = {start = entryptr};
+
+    byte* ptr = entryptr;
+    while true {
+        byte* inst_start = ptr;
+        let inst = decode_instruction(*ptr);
+        uint32 instbytes = (ptr - inst_start) as uint32;
+
+
+        byte* jmp_addr = ptr + inst.operands[0].imm_value;
+        switch (inst.operation) {
+            case .Jcc: {
+                bb.bb_next = make_bb(proc, ptr);
+                bb.bb_jump = make_bb(proc, jmp_addr);
+                return bb;
+            }
+
+            case .jmp: {
+                bb.bb_jump = make_bb(proc, jmp_addr);
+                return bb;
+            }
+
+            case .ret: return bb;
+
+            case .call: break;
+        }
+    }
+}
+
+
+void cfg(void* entryptr) {
+    byte* ptr = entryptr;
+
+    while true {
+        byte* start = ptr;
+        let inst = decode_instruction(*ptr);
+        uint32 instbytes = (ptr - start) as uint32;
+
+        printf("%p", start);
+        for 0 .. 15  if (it < instbytes) printf(" %02x", start[it]); else printf("   ");
+
+        char* dasm = stringify(inst, temp_builder()).chars;
+        printf("%s\n", dasm);
+
+        byte* jmp_loc = ptr + inst.operands[0].imm_value;
+        switch inst.operation {
+            case .Jcc:
+            case .jmp:
+                ptr = jmp_loc;
+                printf("Jumped\n");
+                break;
+
+            case .call: break;
+            case .ret: return;
+        }
     }
 }
 

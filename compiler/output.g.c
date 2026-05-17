@@ -51,7 +51,7 @@ typedef struct Image_Nt_Headers Image_Nt_Headers;
 typedef struct Image_Optional_Header_64 Image_Optional_Header_64;
 typedef struct x64_Instruction x64_Instruction;
 typedef struct x64_Operand x64_Operand;
-typedef struct x64_Operand_Encoding x64_Operand_Encoding;
+typedef struct x64_Opcode_Map_Entry x64_Opcode_Map_Entry;
 typedef struct ModRM_SIB_disp ModRM_SIB_disp;
 
 // Enums
@@ -225,7 +225,8 @@ struct x64_Operand { // deps = 0
     int64 imm_value;
     uint32 opsize;
 };
-struct x64_Operand_Encoding { // deps = 0
+struct x64_Opcode_Map_Entry { // deps = 0
+    x64_Operation operation;
     byte operands[4];
 };
 struct ModRM_SIB_disp { // deps = 0
@@ -957,14 +958,15 @@ static TypeInfo rtti_types[] = {
         }},
     },
     {
-        .name = "x64_Operand_Encoding",
+        .name = "x64_Opcode_Map_Entry",
         .inner_type = 0,
-        .bytesize = 0,
-        .alignment = 1,
+        .bytesize = 4,
+        .alignment = 4,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 1, .data = (StructField[]){
-            {.type_info = (rtti_types+0), .name = "operands", .offset = 0},
+        .fields = (Array) { .length = 2, .data = (StructField[]){
+            {.type_info = (rtti_types+53), .name = "operation", .offset = 0},
+            {.type_info = (rtti_types+0), .name = "operands", .offset = 4},
         }},
     },
     {
@@ -1239,7 +1241,7 @@ static TypeInfo rtti_types[] = {
         .alignment = 4,
         .kind = 17,
         .num_ptr = 0,
-        .entries = (Array) { .length = 44, .data = (EnumEntry[]){
+        .entries = (Array) { .length = 83, .data = (EnumEntry[]){
             {.name = "none", .value = 0},
             {.name = "add", .value = 1},
             {.name = "or", .value = 2},
@@ -1283,7 +1285,46 @@ static TypeInfo rtti_types[] = {
             {.name = "std", .value = 40},
             {.name = "ins", .value = 41},
             {.name = "outs", .value = 42},
-            {.name = "prefix", .value = 43},
+            {.name = "lar", .value = 43},
+            {.name = "lsl", .value = 44},
+            {.name = "syscall", .value = 45},
+            {.name = "clts", .value = 46},
+            {.name = "sysret", .value = 47},
+            {.name = "invd", .value = 48},
+            {.name = "wbinvd", .value = 49},
+            {.name = "prefetchw", .value = 50},
+            {.name = "wrmsr", .value = 51},
+            {.name = "rdtsc", .value = 52},
+            {.name = "rdmsr", .value = 53},
+            {.name = "rdpmc", .value = 54},
+            {.name = "sysenter", .value = 55},
+            {.name = "sysexit", .value = 56},
+            {.name = "getsec", .value = 57},
+            {.name = "cmov_cc", .value = 58},
+            {.name = "vmread", .value = 59},
+            {.name = "vmwrite", .value = 60},
+            {.name = "set_cc", .value = 61},
+            {.name = "cpuid", .value = 62},
+            {.name = "bt", .value = 63},
+            {.name = "shld", .value = 64},
+            {.name = "rsm", .value = 65},
+            {.name = "bts", .value = 66},
+            {.name = "shrd", .value = 67},
+            {.name = "cmpxchg", .value = 68},
+            {.name = "lss", .value = 69},
+            {.name = "btr", .value = 70},
+            {.name = "lfs", .value = 71},
+            {.name = "lgs", .value = 72},
+            {.name = "movzx", .value = 73},
+            {.name = "btc", .value = 74},
+            {.name = "bsf", .value = 75},
+            {.name = "bsr", .value = 76},
+            {.name = "movsx", .value = 77},
+            {.name = "xadd", .value = 78},
+            {.name = "movnti", .value = 79},
+            {.name = "bswap", .value = 80},
+            {.name = "ud0", .value = 81},
+            {.name = "prefix", .value = 82},
         }},
     },
     {
@@ -1900,11 +1941,10 @@ static void run_tests();
 
 // Declarations
 static Array pog_all_ops = (Array) { .length = 6, .data = (Array[]){(Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {23, 13}, (Pog_Binary_Op) {24, 14}}}, (Array) { .length = 6, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {60, 7}, (Pog_Binary_Op) {61, 8}, (Pog_Binary_Op) {62, 9}, (Pog_Binary_Op) {63, 10}, (Pog_Binary_Op) {64, 11}, (Pog_Binary_Op) {65, 12}}}, (Array) { .length = 1, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {42, 6}}}, (Array) { .length = 5, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {49, 15}, (Pog_Binary_Op) {50, 16}, (Pog_Binary_Op) {51, 17}, (Pog_Binary_Op) {52, 18}, (Pog_Binary_Op) {53, 19}}}, (Array) { .length = 2, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {67, 1}, (Pog_Binary_Op) {68, 2}}}, (Array) { .length = 3, .data = (Pog_Binary_Op[]){(Pog_Binary_Op) {69, 3}, (Pog_Binary_Op) {70, 4}, (Pog_Binary_Op) {71, 5}}}}};
-static x64_Operation x64_primary_opcode_map[256] = {1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 4, 4, 4, 4, 4, 4, 0, 0, 5, 5, 5, 5, 5, 5, 43, 0, 6, 6, 6, 6, 6, 6, 43, 0, 7, 7, 7, 7, 7, 7, 43, 0, 8, 8, 8, 8, 8, 8, 43, 0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 0, 0, 0, 12, 43, 43, 43, 43, 10, 13, 10, 13, 41, 41, 42, 42, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 15, 15, 16, 16, 17, 17, 17, 17, 17, 18, 17, 0, 16, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 19, 20, 17, 17, 17, 17, 0, 0, 0, 0, 15, 15, 0, 0, 0, 0, 0, 0, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 0, 0, 21, 21, 0, 0, 17, 17, 22, 23, 21, 21, 24, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 26, 26, 26, 26, 26, 26, 26, 0, 0, 27, 0, 28, 28, 29, 29, 30, 31, 31, 31, 28, 28, 29, 29, 43, 32, 43, 43, 33, 34, 0, 0, 35, 36, 37, 38, 39, 40, 0, 0};
-static x64_Operation x64_secondary_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static x64_Operation x64_0F_38_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static x64_Operation x64_0F_3A_opcode_map[256] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static x64_Operand_Encoding x64_operand_encoding[256] = {(x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {10, 10}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {13}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {11}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {15, 18}, (x64_Operand_Encoding) {16, 18}, (x64_Operand_Encoding) {18, 25}, (x64_Operand_Encoding) {18, 26}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 13}, (x64_Operand_Encoding) {1}, (x64_Operand_Encoding) {3, 11}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {1, 4}, (x64_Operand_Encoding) {3, 5}, (x64_Operand_Encoding) {4, 1}, (x64_Operand_Encoding) {5, 3}, (x64_Operand_Encoding) {3, 21}, (x64_Operand_Encoding) {5, 30}, (x64_Operand_Encoding) {21, 2}, (x64_Operand_Encoding) {3}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {8, 10}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {22}, (x64_Operand_Encoding) {22}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {6, 23}, (x64_Operand_Encoding) {8, 24}, (x64_Operand_Encoding) {23, 6}, (x64_Operand_Encoding) {24, 8}, (x64_Operand_Encoding) {15, 25}, (x64_Operand_Encoding) {17, 27}, (x64_Operand_Encoding) {25, 15}, (x64_Operand_Encoding) {27, 17}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {8, 13}, (x64_Operand_Encoding) {15, 6}, (x64_Operand_Encoding) {17, 8}, (x64_Operand_Encoding) {6, 25}, (x64_Operand_Encoding) {8, 27}, (x64_Operand_Encoding) {6, 15}, (x64_Operand_Encoding) {8, 17}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {9, 11}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {10, 14}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 11}, (x64_Operand_Encoding) {12}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 11}, (x64_Operand_Encoding) {3, 13}, (x64_Operand_Encoding) {12, 11}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {12}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {11}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1, 29}, (x64_Operand_Encoding) {3, 29}, (x64_Operand_Encoding) {1, 31}, (x64_Operand_Encoding) {3, 31}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {28, 28}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {6, 11}, (x64_Operand_Encoding) {7, 11}, (x64_Operand_Encoding) {11, 6}, (x64_Operand_Encoding) {11, 7}, (x64_Operand_Encoding) {20}, (x64_Operand_Encoding) {20}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {19}, (x64_Operand_Encoding) {6, 18}, (x64_Operand_Encoding) {7, 18}, (x64_Operand_Encoding) {18, 6}, (x64_Operand_Encoding) {18, 7}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {1}, (x64_Operand_Encoding) {3}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}, (x64_Operand_Encoding) {0}};
+static x64_Opcode_Map_Entry x64_primary_opcode_map[256] = {(x64_Opcode_Map_Entry) {1, 1, 4}, (x64_Opcode_Map_Entry) {1, 3, 5}, (x64_Opcode_Map_Entry) {1, 4, 1}, (x64_Opcode_Map_Entry) {1, 5, 3}, (x64_Opcode_Map_Entry) {1, 6, 11}, (x64_Opcode_Map_Entry) {1, 8, 13}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {2, 1, 4}, (x64_Opcode_Map_Entry) {2, 3, 5}, (x64_Opcode_Map_Entry) {2, 4, 1}, (x64_Opcode_Map_Entry) {2, 5, 3}, (x64_Opcode_Map_Entry) {2, 6, 11}, (x64_Opcode_Map_Entry) {2, 8, 13}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {3, 1, 4}, (x64_Opcode_Map_Entry) {3, 3, 5}, (x64_Opcode_Map_Entry) {3, 4, 1}, (x64_Opcode_Map_Entry) {3, 5, 3}, (x64_Opcode_Map_Entry) {3, 6, 11}, (x64_Opcode_Map_Entry) {3, 8, 13}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {4, 1, 4}, (x64_Opcode_Map_Entry) {4, 3, 5}, (x64_Opcode_Map_Entry) {4, 4, 1}, (x64_Opcode_Map_Entry) {4, 5, 3}, (x64_Opcode_Map_Entry) {4, 6, 11}, (x64_Opcode_Map_Entry) {4, 8, 13}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {5, 1, 4}, (x64_Opcode_Map_Entry) {5, 3, 5}, (x64_Opcode_Map_Entry) {5, 4, 1}, (x64_Opcode_Map_Entry) {5, 5, 3}, (x64_Opcode_Map_Entry) {5, 6, 11}, (x64_Opcode_Map_Entry) {5, 8, 13}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {6, 1, 4}, (x64_Opcode_Map_Entry) {6, 3, 5}, (x64_Opcode_Map_Entry) {6, 4, 1}, (x64_Opcode_Map_Entry) {6, 5, 3}, (x64_Opcode_Map_Entry) {6, 6, 11}, (x64_Opcode_Map_Entry) {6, 8, 13}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {7, 1, 4}, (x64_Opcode_Map_Entry) {7, 3, 5}, (x64_Opcode_Map_Entry) {7, 4, 1}, (x64_Opcode_Map_Entry) {7, 5, 3}, (x64_Opcode_Map_Entry) {7, 6, 11}, (x64_Opcode_Map_Entry) {7, 8, 13}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {8, 1, 4}, (x64_Opcode_Map_Entry) {8, 3, 5}, (x64_Opcode_Map_Entry) {8, 4, 1}, (x64_Opcode_Map_Entry) {8, 5, 3}, (x64_Opcode_Map_Entry) {8, 6, 11}, (x64_Opcode_Map_Entry) {8, 8, 13}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {9}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {10, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {11, 10}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {12, 5, 3}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {10, 13}, (x64_Opcode_Map_Entry) {13, 5, 3, 13}, (x64_Opcode_Map_Entry) {10, 11}, (x64_Opcode_Map_Entry) {13, 5, 3, 11}, (x64_Opcode_Map_Entry) {41, 15, 18}, (x64_Opcode_Map_Entry) {41, 16, 18}, (x64_Opcode_Map_Entry) {42, 18, 25}, (x64_Opcode_Map_Entry) {42, 18, 26}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {14, 19}, (x64_Opcode_Map_Entry) {0, 1, 11}, (x64_Opcode_Map_Entry) {0, 3, 13}, (x64_Opcode_Map_Entry) {0, 1}, (x64_Opcode_Map_Entry) {0, 3, 11}, (x64_Opcode_Map_Entry) {15, 1, 4}, (x64_Opcode_Map_Entry) {15, 3, 5}, (x64_Opcode_Map_Entry) {16, 1, 4}, (x64_Opcode_Map_Entry) {16, 3, 5}, (x64_Opcode_Map_Entry) {17, 1, 4}, (x64_Opcode_Map_Entry) {17, 3, 5}, (x64_Opcode_Map_Entry) {17, 4, 1}, (x64_Opcode_Map_Entry) {17, 5, 3}, (x64_Opcode_Map_Entry) {17, 3, 21}, (x64_Opcode_Map_Entry) {18, 5, 30}, (x64_Opcode_Map_Entry) {17, 21, 2}, (x64_Opcode_Map_Entry) {0, 3}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {16, 8, 10}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0, 22}, (x64_Opcode_Map_Entry) {0, 22}, (x64_Opcode_Map_Entry) {19}, (x64_Opcode_Map_Entry) {20}, (x64_Opcode_Map_Entry) {17, 6, 23}, (x64_Opcode_Map_Entry) {17, 8, 24}, (x64_Opcode_Map_Entry) {17, 23, 6}, (x64_Opcode_Map_Entry) {17, 24, 8}, (x64_Opcode_Map_Entry) {0, 15, 25}, (x64_Opcode_Map_Entry) {0, 17, 27}, (x64_Opcode_Map_Entry) {0, 25, 15}, (x64_Opcode_Map_Entry) {0, 27, 17}, (x64_Opcode_Map_Entry) {15, 6, 11}, (x64_Opcode_Map_Entry) {15, 8, 13}, (x64_Opcode_Map_Entry) {0, 15, 6}, (x64_Opcode_Map_Entry) {0, 17, 8}, (x64_Opcode_Map_Entry) {0, 6, 25}, (x64_Opcode_Map_Entry) {0, 8, 27}, (x64_Opcode_Map_Entry) {0, 6, 15}, (x64_Opcode_Map_Entry) {0, 8, 17}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 9, 11}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {17, 10, 14}, (x64_Opcode_Map_Entry) {0, 1, 11}, (x64_Opcode_Map_Entry) {0, 3, 11}, (x64_Opcode_Map_Entry) {21, 12}, (x64_Opcode_Map_Entry) {21}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {17, 1, 11}, (x64_Opcode_Map_Entry) {17, 3, 13}, (x64_Opcode_Map_Entry) {22, 12, 11}, (x64_Opcode_Map_Entry) {23}, (x64_Opcode_Map_Entry) {21, 12}, (x64_Opcode_Map_Entry) {21}, (x64_Opcode_Map_Entry) {24}, (x64_Opcode_Map_Entry) {25, 11}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0, 1, 29}, (x64_Opcode_Map_Entry) {0, 3, 29}, (x64_Opcode_Map_Entry) {0, 1, 31}, (x64_Opcode_Map_Entry) {0, 3, 31}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {26, 28, 28}, (x64_Opcode_Map_Entry) {0, 19}, (x64_Opcode_Map_Entry) {0, 19}, (x64_Opcode_Map_Entry) {27, 19}, (x64_Opcode_Map_Entry) {0, 19}, (x64_Opcode_Map_Entry) {28, 6, 11}, (x64_Opcode_Map_Entry) {28, 7, 11}, (x64_Opcode_Map_Entry) {29, 11, 6}, (x64_Opcode_Map_Entry) {29, 11, 7}, (x64_Opcode_Map_Entry) {30, 20}, (x64_Opcode_Map_Entry) {31, 20}, (x64_Opcode_Map_Entry) {31}, (x64_Opcode_Map_Entry) {31, 19}, (x64_Opcode_Map_Entry) {28, 6, 18}, (x64_Opcode_Map_Entry) {28, 7, 18}, (x64_Opcode_Map_Entry) {29, 18, 6}, (x64_Opcode_Map_Entry) {29, 18, 7}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {32}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {82}, (x64_Opcode_Map_Entry) {33}, (x64_Opcode_Map_Entry) {34}, (x64_Opcode_Map_Entry) {0, 1}, (x64_Opcode_Map_Entry) {0, 3}, (x64_Opcode_Map_Entry) {35}, (x64_Opcode_Map_Entry) {36}, (x64_Opcode_Map_Entry) {37}, (x64_Opcode_Map_Entry) {38}, (x64_Opcode_Map_Entry) {39}, (x64_Opcode_Map_Entry) {40}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}};
+static x64_Opcode_Map_Entry x64_secondary_opcode_map[256] = {(x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {43, 5, 2}, (x64_Opcode_Map_Entry) {44, 5, 2}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {45}, (x64_Opcode_Map_Entry) {46}, (x64_Opcode_Map_Entry) {47}, (x64_Opcode_Map_Entry) {48}, (x64_Opcode_Map_Entry) {49}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {50, 3}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {17, 34, 32}, (x64_Opcode_Map_Entry) {17, 34, 33}, (x64_Opcode_Map_Entry) {17, 32, 34}, (x64_Opcode_Map_Entry) {17, 33, 34}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {51}, (x64_Opcode_Map_Entry) {52}, (x64_Opcode_Map_Entry) {53}, (x64_Opcode_Map_Entry) {54}, (x64_Opcode_Map_Entry) {55}, (x64_Opcode_Map_Entry) {56}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {57}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {58, 5, 3}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {59, 35, 40}, (x64_Opcode_Map_Entry) {60, 40, 35}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {14, 20}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {61, 1}, (x64_Opcode_Map_Entry) {10, 36}, (x64_Opcode_Map_Entry) {11, 36}, (x64_Opcode_Map_Entry) {62}, (x64_Opcode_Map_Entry) {63, 3, 5}, (x64_Opcode_Map_Entry) {64, 3, 5, 11}, (x64_Opcode_Map_Entry) {64, 3, 5, 31}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {10, 37}, (x64_Opcode_Map_Entry) {11, 37}, (x64_Opcode_Map_Entry) {65}, (x64_Opcode_Map_Entry) {66, 3, 5}, (x64_Opcode_Map_Entry) {67, 3, 5, 11}, (x64_Opcode_Map_Entry) {67, 3, 5, 31}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {13, 5, 3}, (x64_Opcode_Map_Entry) {68, 1, 4}, (x64_Opcode_Map_Entry) {68, 3, 5}, (x64_Opcode_Map_Entry) {69, 5, 38}, (x64_Opcode_Map_Entry) {70, 3, 5}, (x64_Opcode_Map_Entry) {71, 5, 38}, (x64_Opcode_Map_Entry) {72, 5, 38}, (x64_Opcode_Map_Entry) {73, 5, 1}, (x64_Opcode_Map_Entry) {73, 5, 2}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {74, 3, 5}, (x64_Opcode_Map_Entry) {75, 5, 3}, (x64_Opcode_Map_Entry) {76, 5, 3}, (x64_Opcode_Map_Entry) {77, 5, 1}, (x64_Opcode_Map_Entry) {77, 5, 2}, (x64_Opcode_Map_Entry) {78, 1, 4}, (x64_Opcode_Map_Entry) {78, 3, 5}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {79, 39, 40}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {80, 10}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {81}};
+static x64_Opcode_Map_Entry x64_0F_38_opcode_map[256] = {(x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}};
+static x64_Opcode_Map_Entry x64_0F_3A_opcode_map[256] = {(x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}, (x64_Opcode_Map_Entry) {0}};
 static StringBuilder* temps;
 static uint32 rotation = 0;
 static uint32 total_test_count = 0;
@@ -1916,7 +1956,8 @@ void __main() {
     cfg(HELLO);
 }
 static void HELLO() {
-    int32 i = 0;
+    float32 f = 0;
+    int32 i = 1;
     if (i == 0) {
         printf("%s", "zero\n");
     } else {
@@ -4960,6 +5001,84 @@ static char* to_string_overload9(x64_Operation op) {
         case 42:;
         return "outs";
         case 43:;
+        return "lar";
+        case 44:;
+        return "lsl";
+        case 45:;
+        return "syscall";
+        case 46:;
+        return "clts";
+        case 47:;
+        return "sysret";
+        case 48:;
+        return "invd";
+        case 49:;
+        return "wbinvd";
+        case 50:;
+        return "prefetchw";
+        case 51:;
+        return "wrmsr";
+        case 52:;
+        return "rdtsc";
+        case 53:;
+        return "rdmsr";
+        case 54:;
+        return "rdpmc";
+        case 55:;
+        return "sysenter";
+        case 56:;
+        return "sysexit";
+        case 57:;
+        return "getsec";
+        case 58:;
+        return "cmov_cc";
+        case 59:;
+        return "vmread";
+        case 60:;
+        return "vmwrite";
+        case 61:;
+        return "set_cc";
+        case 62:;
+        return "cpuid";
+        case 63:;
+        return "bt";
+        case 64:;
+        return "shld";
+        case 65:;
+        return "rsm";
+        case 66:;
+        return "bts";
+        case 67:;
+        return "shrd";
+        case 68:;
+        return "cmpxchg";
+        case 69:;
+        return "lss";
+        case 70:;
+        return "btr";
+        case 71:;
+        return "lfs";
+        case 72:;
+        return "lgs";
+        case 73:;
+        return "movzx";
+        case 74:;
+        return "btc";
+        case 75:;
+        return "bsf";
+        case 76:;
+        return "bsr";
+        case 77:;
+        return "movsx";
+        case 78:;
+        return "xadd";
+        case 79:;
+        return "movnti";
+        case 80:;
+        return "bswap";
+        case 81:;
+        return "ud0";
+        case 82:;
         return "prefix";
     }
 }
@@ -5046,6 +5165,24 @@ static bool has_modrm(byte encoding) {
         return 1;
         case 31:;
         return 0;
+        case 32:;
+        return 1;
+        case 33:;
+        return 1;
+        case 34:;
+        return 1;
+        case 35:;
+        return 1;
+        case 36:;
+        return 0;
+        case 37:;
+        return 0;
+        case 38:;
+        return 1;
+        case 39:;
+        return 1;
+        case 40:;
+        return 1;
         default:;
         return 0;
     }
@@ -5060,6 +5197,7 @@ static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte 
     uint32 w = 2;
     uint32 z = (opsize <= 4) ? opsize : 4;
     uint32 v = opsize;
+    uint32 y = (opsize >= 4) ? opsize : 4;
     /* local procedure */;
     switch (encoding) {
         default:;
@@ -5127,6 +5265,24 @@ static x64_Operand make_operand(byte** pptr, uint32 opsize, uint32 adsize, byte 
         if (modrm.mem_is_register) return (x64_Operand) {0}; else return E(v, adsize, modrm);
         case 31:;
         return (x64_Operand) {0};
+        case 32:;
+        return (x64_Operand) {0};
+        case 33:;
+        return (x64_Operand) {0};
+        case 34:;
+        return (x64_Operand) {0};
+        case 35:;
+        return E(y, adsize, modrm);
+        case 36:;
+        return (x64_Operand) {0};
+        case 37:;
+        return (x64_Operand) {0};
+        case 38:;
+        return (x64_Operand) {0};
+        case 39:;
+        if (modrm.mem_is_register) return (x64_Operand) {0}; else return E(y, adsize, modrm);
+        case 40:;
+        return (x64_Operand) {.kind = 2, .reg = select_gpr(modrm.reg, y), .opsize = y};
     }
 }
 static x64_Instruction decode_instruction(byte** pptr) {
@@ -5164,31 +5320,30 @@ static x64_Instruction decode_instruction(byte** pptr) {
     byte opcode = *ptr++;
     if ((opcode & 248) == 216) {
     }
-    x64_Operation* opcode_map = x64_primary_opcode_map;
+    x64_Opcode_Map_Entry* opcode_map = x64_primary_opcode_map;
     if (opcode == 15) {
         opcode = *ptr++;
+        opcode_map = x64_secondary_opcode_map;
         if (opcode == 56) {
             opcode = *ptr++;
             opcode_map = x64_0F_38_opcode_map;
         } else if (opcode == 58) {
             opcode = *ptr++;
             opcode_map = x64_0F_3A_opcode_map;
-        } else {
-            opcode_map = x64_secondary_opcode_map;
         }
     }
-    inst.operation = opcode_map[opcode];
-    byte opcode_reg = (bit_ext_mem | (opcode & 7));
-    x64_Operand_Encoding encoding = x64_operand_encoding[opcode];
+    x64_Opcode_Map_Entry entry = opcode_map[opcode];
+    inst.operation = entry.operation;
     ModRM_SIB_disp modrm = (ModRM_SIB_disp) {0};
-    for (int32 it = 0; it < 4; it++) if (has_modrm(encoding.operands[it])) {
+    for (int32 it = 0; it < 4; it++) if (has_modrm(entry.operands[it])) {
         modrm = decode_modrm(&ptr);
         break;
     }
     modrm.reg |= bit_ext_reg;
     modrm.idx |= bit_ext_idx;
     modrm.mem |= bit_ext_mem;
-    for (int32 it = 0; it < 4; it++) inst.operands[it] = make_operand(&ptr, opsize, adsize, opcode_reg, encoding.operands[it], modrm);
+    byte opcode_reg = (bit_ext_mem | (opcode & 7));
+    for (int32 it = 0; it < 4; it++) inst.operands[it] = make_operand(&ptr, opsize, adsize, opcode_reg, entry.operands[it], modrm);
     *pptr = ptr;
     return inst;
 }
@@ -5359,6 +5514,8 @@ static void cfg(void* entryptr) {
         printf("%s\n", dasm);
         if (inst.operation == 31) {
             byte* jmp_loc = (ptr + inst.operands[0].imm_value);
+            ptr = jmp_loc;
+            printf("Jumped");
         }
         if (inst.operation == 21) break;
     }
@@ -5595,6 +5752,75 @@ static void run_tests() {
     printf("%s", "call\n");
     test((Array)(Array) { .length = 5, .data = (byte[]){232, 16, 0, 0, 0}}, "call 0x10");
     test((Array)(Array) { .length = 7, .data = (byte[]){138, 4, 37, 1, 0, 0, 0}}, "mov al, byte ptr ds:0x1");
+    printf("%s", "push/pop 0x50 to 0x5F\n");
+    test((Array)(Array) { .length = 1, .data = (byte[]){80}}, "push rax");
+    test((Array)(Array) { .length = 1, .data = (byte[]){81}}, "push rcx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){82}}, "push rdx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){83}}, "push rbx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){84}}, "push rsp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){85}}, "push rbp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){86}}, "push rsi");
+    test((Array)(Array) { .length = 1, .data = (byte[]){87}}, "push rdi");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 80}}, "push r8");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 81}}, "push r9");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 82}}, "push r10");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 83}}, "push r11");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 84}}, "push r12");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 85}}, "push r13");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 86}}, "push r14");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 87}}, "push r15");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 80}}, "push ax");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 81}}, "push cx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 82}}, "push dx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 83}}, "push bx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 84}}, "push sp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 85}}, "push bp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 86}}, "push si");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 87}}, "push di");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 80}}, "push r8w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 81}}, "push r9w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 82}}, "push r10w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 83}}, "push r11w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 84}}, "push r12w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 85}}, "push r13w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 86}}, "push r14w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 87}}, "push r15w");
+    test((Array)(Array) { .length = 1, .data = (byte[]){88}}, "pop rax");
+    test((Array)(Array) { .length = 1, .data = (byte[]){89}}, "pop rcx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){90}}, "pop rdx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){91}}, "pop rbx");
+    test((Array)(Array) { .length = 1, .data = (byte[]){92}}, "pop rsp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){93}}, "pop rbp");
+    test((Array)(Array) { .length = 1, .data = (byte[]){94}}, "pop rsi");
+    test((Array)(Array) { .length = 1, .data = (byte[]){95}}, "pop rdi");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 88}}, "pop r8");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 89}}, "pop r9");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 90}}, "pop r10");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 91}}, "pop r11");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 92}}, "pop r12");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 93}}, "pop r13");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 94}}, "pop r14");
+    test((Array)(Array) { .length = 2, .data = (byte[]){65, 95}}, "pop r15");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 88}}, "pop ax");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 89}}, "pop cx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 90}}, "pop dx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 91}}, "pop bx");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 92}}, "pop sp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 93}}, "pop bp");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 94}}, "pop si");
+    test((Array)(Array) { .length = 2, .data = (byte[]){102, 95}}, "pop di");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 88}}, "pop r8w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 89}}, "pop r9w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 90}}, "pop r10w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 91}}, "pop r11w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 92}}, "pop r12w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 93}}, "pop r13w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 94}}, "pop r14w");
+    test((Array)(Array) { .length = 3, .data = (byte[]){102, 65, 95}}, "pop r15w");
+    printf("%s", "\n");
+    test((Array)(Array) { .length = 3, .data = (byte[]){107, 193, 1}}, "imul eax, ecx, 0x1");
+    test((Array)(Array) { .length = 6, .data = (byte[]){105, 193, 128, 0, 0, 0}}, "imul eax, ecx, 0x80");
+    test((Array)(Array) { .length = 3, .data = (byte[]){107, 193, 255}}, "imul eax, ecx, 0xffffffff");
     printf("Summary: %d/%d tests passed. Failed: %d\n", (total_test_count - total_failed), total_test_count, total_failed);
 }
 static void __static_init() {

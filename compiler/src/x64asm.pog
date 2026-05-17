@@ -10,8 +10,50 @@ enum x64_Operation {
     in; out; call; jmp; int1; hlt; cmc; clc; stc; cli; sti; cld; std;
     ins; outs;
 
+    lar;
+    lsl;
+    syscall;
+    clts;
+    sysret;
+    invd;
+    wbinvd;
+    prefetchw;
+    wrmsr;
+    rdtsc;
+    rdmsr;
+    rdpmc;
+    sysenter;
+    sysexit;
+    getsec;
+    cmov_cc;
+    vmread;
+    vmwrite;
+    set_cc;
+    cpuid;
+    bt;
+    shld;
+    rsm;
+    bts;
+    shrd;
+    cmpxchg;
+    lss;
+    btr;
+    lfs;
+    lgs;
+    movzx;
+    btc;
+    bsf;
+    bsr;
+    movsx;
+    xadd;
+    movnti;
+    bswap;
+    ud0;
+
     prefix; // temp
 }
+
+
 
 char* to_string(x64_Operation op) switch (op) {
     default:
@@ -58,6 +100,45 @@ char* to_string(x64_Operation op) switch (op) {
     case .std:     return "std";
     case .ins:     return "ins";
     case .outs:    return "outs";
+    case .lar:       return "lar";
+    case .lsl:       return "lsl";
+    case .syscall:   return "syscall";
+    case .clts:      return "clts";
+    case .sysret:    return "sysret";
+    case .invd:      return "invd";
+    case .wbinvd:    return "wbinvd";
+    case .prefetchw: return "prefetchw";
+    case .wrmsr:     return "wrmsr";
+    case .rdtsc:     return "rdtsc";
+    case .rdmsr:     return "rdmsr";
+    case .rdpmc:     return "rdpmc";
+    case .sysenter:  return "sysenter";
+    case .sysexit:   return "sysexit";
+    case .getsec:    return "getsec";
+    case .cmov_cc:   return "cmov_cc";
+    case .vmread:    return "vmread";
+    case .vmwrite:   return "vmwrite";
+    case .set_cc:    return "set_cc";
+    case .cpuid:     return "cpuid";
+    case .bt:        return "bt";
+    case .shld:      return "shld";
+    case .rsm:       return "rsm";
+    case .bts:       return "bts";
+    case .shrd:      return "shrd";
+    case .cmpxchg:   return "cmpxchg";
+    case .lss:       return "lss";
+    case .btr:       return "btr";
+    case .lfs:       return "lfs";
+    case .lgs:       return "lgs";
+    case .movzx:     return "movzx";
+    case .btc:       return "btc";
+    case .bsf:       return "bsf";
+    case .bsr:       return "bsr";
+    case .movsx:     return "movsx";
+    case .xadd:      return "xadd";
+    case .movnti:    return "movnti";
+    case .bswap:     return "bswap";
+    case .ud0:       return "ud0";
     case .prefix:  return "prefix";
 }
 
@@ -121,87 +202,6 @@ struct x64_Operand {
     uint32 opsize;
 }
 
-
-x64_Operation[0x100] x64_primary_opcode_map = { // TODO: make "prefix" more descriptive
-//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
-/*00*/  .add,     .add,     .add,     .add,     .add,     .add,     .none,    .none,    .or,      .or,      .or,      .or,      .or,      .or,      .none,    .none,
-/*10*/  .adc,     .adc,     .adc,     .adc,     .adc,     .adc,     .none,    .none,    .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .sbb,     .none,    .none,
-/*20*/  .and,     .and,     .and,     .and,     .and,     .and,     .prefix,  .none,    .sub,     .sub,     .sub,     .sub,     .sub,     .sub,     .prefix,  .none,
-/*30*/  .xor,     .xor,     .xor,     .xor,     .xor,     .xor,     .prefix,  .none,    .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .cmp,     .prefix,  .none,
-/*40*/  .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,     .rex,
-/*50*/  .push,    .push,    .push,    .push,    .push,    .push,    .push,    .push,    .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,     .pop,
-/*60*/  .none,    .none,    .none,    .movsxd,  .prefix,  .prefix,  .prefix,  .prefix,  .push,    .imul,    .push,    .imul,    .ins,     .ins,     .outs,    .outs,
-/*70*/  .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,     .Jcc,
-/*80*/  .none,    .none,    .none,    .none,    .test,    .test,    .xchg,    .xchg,    .mov,     .mov,     .mov,     .mov,     .mov,     .lea,     .mov,     .none,
-/*90*/  .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .xchg,    .none,    .none,    .none,    .none,    .none,    .none,    .shaf,    .lahf,
-/*A0*/  .mov,     .mov,     .mov,     .mov,     .none,    .none,    .none,    .none,    .test,    .test,    .none,    .none,    .none,    .none,    .none,    .none,
-/*B0*/  .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,     .mov,
-/*C0*/  .none,    .none,    .ret,     .ret,     .none,    .none,    .mov,     .mov,     .enter,   .leave,   .ret,     .ret,     .int3,    .int,     .none,    .none,
-/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,     .esc,
-/*E0*/  .none,    .none,    .loop,    .none,    .in,      .in,      .out,     .out,     .call,    .jmp,     .jmp,     .jmp,     .in,      .in,      .out,     .out,
-/*F0*/  .prefix,  .int1,    .prefix,  .prefix,  .hlt,     .cmc,     .none,    .none,    .clc,     .stc,     .cli,     .sti,     .cld,     .std,     .none,    .none,
-};
-
-x64_Operation[0x100] x64_secondary_opcode_map = {
-//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
-/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-};
-
-x64_Operation[0x100] x64_0F_38_opcode_map = {
-//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
-/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-};
-
-x64_Operation[0x100] x64_0F_3A_opcode_map = {
-//       00        01        02        03        04        05        06        07        08        09        0A        0B        0C        0D        0E        0F
-/*00*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*10*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*20*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*30*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*40*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*50*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*60*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*70*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*80*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*90*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*A0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*B0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*C0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*D0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*E0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-/*F0*/  .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,    .none,
-};
-
 /* legend:
     Eb,Gb    Ev,Gv    Gb,Eb    Gv,Ev    AL,Ib    rAX,Iz
 
@@ -222,6 +222,7 @@ x64_Operation[0x100] x64_0F_3A_opcode_map = {
 
     v       = either word, doubleword or quadword depending on operand-size
     z       = either word (when 16bit operand-size) or doubleword (when 32/64bit operand-size)
+    y       = either doubleword or quadword depending on operand-size
 */
 
 const Eb   = 1;  // modrm.rm
@@ -255,33 +256,170 @@ const esc  = 28; //
 const I1   = 29; // the constant 1
 const M    = 30; // the ModR/M byte may refer only to memory
 const CL   = 31; // CL byte register
+const Cd   = 32; // modrm.reg selects control register
+const Dd   = 33; // modrm.reg selects debug register
+const Rd   = 34; // modrm.rm may refer only to a general register
+const Ey   = 35; // modrm.rm
+const FS   = 36; //
+const GS   = 37; //
+const Mp   = 38; //
+const My   = 39; //
+const Gy   = 40; // modrm.reg
 
-struct x64_Operand_Encoding {
+struct x64_Opcode_Map_Entry {
+    x64_Operation operation;
     byte[x64_Instruction_Max_Operands] operands;
 }
 
-// TODO: look at row 50 these are clearly wrong. Go through table to sanity check. Maybe add some 50 test cases
-// TODO: 3 operand cases like imul. Make test cases for this aswell
-x64_Operand_Encoding[0x100] x64_operand_encoding = {
-//     0           1           2           3           4           5           6           7           8           9           A           B           C           D           E           F
-/*00*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
-/*10*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
-/*20*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
-/*30*/ {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},         {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {AL,Ib},    {rAX,Iz},   {},         {},
-/*40*/ {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},         {},
-/*50*/ {colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},{colv,colv},
-/*60*/ {},         {},         {},         {Gv,Ev},    {},         {},         {},         {},         {Iz},       {Gv,Ev},    {Ib},       {Gv,Ev},    {Yb,DX},    {Yz,DX},    {DX,Xb},    {DX,Xz},
-/*70*/ {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},       {Jb},
-/*80*/ {Eb,Ib},    {Ev,Iz},    {Eb},       {Ev,Ib},    {Eb,Gb},    {Ev,Gv},    {Eb,Gb},    {Ev,Gv},    {Eb,Gb},    {Ev,Gv},    {Gb,Eb},    {Gv,Ev},    {Ev,Sw},    {Gv,M},     {Sw,Ew},    {Ev},
-/*90*/ {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {rAX,colv}, {},         {},         {},         {},         {Fv},       {Fv},       {},         {},
-/*A0*/ {AL,Ob},    {rAX,Ov},   {Ob,AL},    {Ov,rAX},   {Yb,Xb},    {Yv,Xv},    {Xb,Yb},    {Xv,Yv},    {AL,Ib},    {rAX,Iz},   {Yb,AL},    {Yv,rAX},   {AL,Xb},    {rAX,Xv},   {AL,Yb},    {rAX,Yv},
-/*B0*/ {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colb,Ib},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},  {colv,Iv},
-/*C0*/ {Eb,Ib},    {Ev,Ib},    {Iw},       {},         {},         {},         {Eb,Ib},    {Ev,Iz},    {Iw,Ib},    {},         {Iw},       {},         {},         {Ib},       {},         {},
-/*D0*/ {Eb,I1},    {Ev,I1},    {Eb,CL},    {Ev,CL},    {},         {},         {},         {},         {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},  {esc,esc},
-/*E0*/ {Jb},       {Jb},       {Jb},       {Jb},       {AL,Ib},    {eAX,Ib},   {Ib,AL},    {Ib,eAX},   {Jz},       {Jz},       {},         {Jb},       {AL,DX},    {eAX,DX},   {DX,AL},    {DX,eAX},
-/*F0*/ {},         {},         {},         {},         {},         {},         {Eb},       {Ev},       {},         {},         {},         {},         {},         {},         {},         {},
+// TODO: whats the difference between movsx (0F BE) (0F BF) and movsxd (63)
+
+x64_Opcode_Map_Entry[0x100] x64_primary_opcode_map = {
+//     0                   1                   2                   3                   4                   5                   6                   7
+//     8                   9                   A                   B                   C                   D                   E                   F
+/*00*/ {.add,Eb,Gb},       {.add,Ev,Gv},       {.add,Gb,Eb},       {.add,Gv,Ev},       {.add,AL,Ib},       {.add,rAX,Iz},      {.none},            {.none},
+/*08*/ {.or,Eb,Gb},        {.or,Ev,Gv},        {.or,Gb,Eb},        {.or,Gv,Ev},        {.or,AL,Ib},        {.or,rAX,Iz},       {.none},            {.none},
+/*10*/ {.adc,Eb,Gb},       {.adc,Ev,Gv},       {.adc,Gb,Eb},       {.adc,Gv,Ev},       {.adc,AL,Ib},       {.adc,rAX,Iz},      {.none},            {.none},
+/*18*/ {.sbb,Eb,Gb},       {.sbb,Ev,Gv},       {.sbb,Gb,Eb},       {.sbb,Gv,Ev},       {.sbb,AL,Ib},       {.sbb,rAX,Iz},      {.none},            {.none},
+/*20*/ {.and,Eb,Gb},       {.and,Ev,Gv},       {.and,Gb,Eb},       {.and,Gv,Ev},       {.and,AL,Ib},       {.and,rAX,Iz},      {.prefix},          {.none},
+/*28*/ {.sub,Eb,Gb},       {.sub,Ev,Gv},       {.sub,Gb,Eb},       {.sub,Gv,Ev},       {.sub,AL,Ib},       {.sub,rAX,Iz},      {.prefix},          {.none},
+/*30*/ {.xor,Eb,Gb},       {.xor,Ev,Gv},       {.xor,Gb,Eb},       {.xor,Gv,Ev},       {.xor,AL,Ib},       {.xor,rAX,Iz},      {.prefix},          {.none},
+/*38*/ {.cmp,Eb,Gb},       {.cmp,Ev,Gv},       {.cmp,Gb,Eb},       {.cmp,Gv,Ev},       {.cmp,AL,Ib},       {.cmp,rAX,Iz},      {.prefix},          {.none},
+/*40*/ {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},
+/*48*/ {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},             {.rex},
+/*50*/ {.push,colv},       {.push,colv},       {.push,colv},       {.push,colv},       {.push,colv},       {.push,colv},       {.push,colv},       {.push,colv},
+/*58*/ {.pop,colv},        {.pop,colv},        {.pop,colv},        {.pop,colv},        {.pop,colv},        {.pop,colv},        {.pop,colv},        {.pop,colv},
+/*60*/ {.none},            {.none},            {.none},            {.movsxd,Gv,Ev},    {.prefix},          {.prefix},          {.prefix},          {.prefix},
+/*68*/ {.push,Iz},         {.imul,Gv,Ev,Iz},   {.push,Ib},         {.imul,Gv,Ev,Ib},   {.ins,Yb,DX},       {.ins,Yz,DX},       {.outs,DX,Xb},      {.outs,DX,Xz},
+/*70*/ {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},
+/*78*/ {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},          {.Jcc,Jb},
+/*80*/ {.none,Eb,Ib},      {.none,Ev,Iz},      {.none,Eb},         {.none,Ev,Ib},      {.test,Eb,Gb},      {.test,Ev,Gv},      {.xchg,Eb,Gb},      {.xchg,Ev,Gv},
+/*88*/ {.mov,Eb,Gb},       {.mov,Ev,Gv},       {.mov,Gb,Eb},       {.mov,Gv,Ev},       {.mov,Ev,Sw},       {.lea,Gv,M},        {.mov,Sw,Ew},       {.none,Ev},
+/*90*/ {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},   {.xchg,rAX,colv},
+/*98*/ {.none},            {.none},            {.none},            {.none},            {.none,Fv},         {.none,Fv},         {.shaf},            {.lahf},
+/*A0*/ {.mov,AL,Ob},       {.mov,rAX,Ov},      {.mov,Ob,AL},       {.mov,Ov,rAX},      {.none,Yb,Xb},      {.none,Yv,Xv},      {.none,Xb,Yb},      {.none,Xv,Yv},
+/*A8*/ {.test,AL,Ib},      {.test,rAX,Iz},     {.none,Yb,AL},      {.none,Yv,rAX},     {.none,AL,Xb},      {.none,rAX,Xv},     {.none,AL,Yb},      {.none,rAX,Yv},
+/*B0*/ {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},     {.mov,colb,Ib},
+/*B8*/ {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},     {.mov,colv,Iv},
+/*C0*/ {.none,Eb,Ib},      {.none,Ev,Ib},      {.ret,Iw},          {.ret},             {.none},            {.none},            {.mov,Eb,Ib},       {.mov,Ev,Iz},
+/*C8*/ {.enter,Iw,Ib},     {.leave},           {.ret,Iw},          {.ret},             {.int3},            {.int,Ib},          {.none},            {.none},
+/*D0*/ {.none,Eb,I1},      {.none,Ev,I1},      {.none,Eb,CL},      {.none,Ev,CL},      {.none},            {.none},            {.none},            {.none},
+/*D8*/ {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},     {.esc,esc,esc},
+/*E0*/ {.none,Jb},         {.none,Jb},         {.loop,Jb},         {.none,Jb},         {.in,AL,Ib},        {.in,eAX,Ib},       {.out,Ib,AL},       {.out,Ib,eAX},
+/*E8*/ {.call,Jz},         {.jmp,Jz},          {.jmp},             {.jmp,Jb},          {.in,AL,DX},        {.in,eAX,DX},       {.out,DX,AL},       {.out,DX,eAX},
+/*F0*/ {.prefix},          {.int1},            {.prefix},          {.prefix},          {.hlt},             {.cmc},             {.none,Eb},         {.none,Ev},
+/*F8*/ {.clc},             {.stc},             {.cli},             {.sti},             {.cld},             {.std},             {.none},            {.none},
 };
 
+x64_Opcode_Map_Entry[0x100] x64_secondary_opcode_map = {
+//      0                   1                   2                   3                   4                   5                   6                   7
+//      8                   9                   A                   B                   C                   D                   E                   F
+/*00*/  {.none},            {.none},            {.lar,Gv,Ew},       {.lsl,Gv,Ew},       {.none},            {.syscall},         {.clts},            {.sysret},
+/*08*/  {.invd},            {.wbinvd},          {.none},            {.none},            {.none},            {.prefetchw,Ev},    {.none},            {.none},
+/*10*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*18*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*20*/  {.mov,Rd,Cd},       {.mov,Rd,Dd},       {.mov,Cd,Rd},       {.mov,Dd,Rd},       {.none},            {.none},            {.none},            {.none},
+/*28*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*30*/  {.wrmsr},           {.rdtsc},           {.rdmsr},           {.rdpmc},           {.sysenter},        {.sysexit},         {.none},            {.getsec},
+/*38*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*40*/  {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},
+/*48*/  {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},   {.cmov_cc,Gv,Ev},
+/*50*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*58*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*60*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*68*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*70*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*78*/  {.vmread,Ey,Gy},    {.vmwrite,Gy,Ey},   {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*80*/  {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},
+/*88*/  {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},          {.Jcc,Jz},
+/*90*/  {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},
+/*98*/  {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},       {.set_cc,Eb},
+/*A0*/  {.push,FS},         {.pop,FS},          {.cpuid},           {.bt,Ev,Gv},        {.shld,Ev,Gv,Ib},   {.shld,Ev,Gv,CL},   {.none},            {.none},
+/*A8*/  {.push,GS},         {.pop,GS},          {.rsm},             {.bts,Ev,Gv},       {.shrd,Ev,Gv,Ib},   {.shrd,Ev,Gv,CL},   {.none},            {.imul,Gv,Ev},
+/*B0*/  {.cmpxchg,Eb,Gb},   {.cmpxchg,Ev,Gv},   {.lss,Gv,Mp},       {.btr,Ev,Gv},       {.lfs,Gv,Mp},       {.lgs,Gv,Mp},       {.movzx,Gv,Eb},     {.movzx,Gv,Ew},
+/*B8*/  {.none},            {.none},            {.none},            {.btc,Ev,Gv},       {.bsf,Gv,Ev},       {.bsr,Gv,Ev},       {.movsx,Gv,Eb},     {.movsx,Gv,Ew},
+/*C0*/  {.xadd,Eb,Gb},      {.xadd,Ev,Gv},      {.none},            {.movnti,My,Gy},    {.none},            {.none},            {.none},            {.none},
+/*C8*/  {.bswap,colv},      {.bswap,colv},      {.bswap,colv},      {.bswap,colv},      {.bswap,colv},      {.bswap,colv},      {.bswap,colv},      {.bswap,colv},
+/*D0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*D8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.ud0},
+};
+
+x64_Opcode_Map_Entry[0x100] x64_0F_38_opcode_map = {
+//      0                   1                   2                   3                   4                   5                   6                   7
+//      8                   9                   A                   B                   C                   D                   E                   F
+/*00*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*08*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*10*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*18*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*20*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*28*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*30*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*38*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*40*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*48*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*50*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*58*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*60*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*68*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*70*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*78*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*80*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*88*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*90*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*98*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*A0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*A8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*B0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*B8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*C0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*C8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*D0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*D8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+};
+
+x64_Opcode_Map_Entry[0x100] x64_0F_3A_opcode_map = {
+//      0                   1                   2                   3                   4                   5                   6                   7
+//      8                   9                   A                   B                   C                   D                   E                   F
+/*00*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*08*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*10*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*18*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*20*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*28*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*30*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*38*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*40*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*48*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*50*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*58*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*60*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*68*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*70*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*78*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*80*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*88*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*90*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*98*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*A0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*A8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*B0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*B8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*C0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*C8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*D0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*D8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*E8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F0*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+/*F8*/  {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},            {.none},
+};
 
 
 // TODO: encode the presence of modrm in `encoding` so encoding&0x80 is enough to determin that there is a modrm byte
@@ -317,6 +455,15 @@ bool has_modrm(byte encoding) switch (encoding) {
     case I1:    return false;
     case M:     return true;
     case CL:    return false;
+    case Cd:    return true;
+    case Dd:    return true;
+    case Rd:    return true;
+    case Ey:    return true;
+    case FS:    return false;
+    case GS:    return false;
+    case Mp:    return true;
+    case My:    return true;
+    case Gy:    return true;
 
     default: return false;
 }
@@ -327,6 +474,7 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
     uint32 w = 2;                         // word
     uint32 z = opsize <= 4 ? opsize : 4;  // word or dword
     uint32 v = opsize;                    // word, dword or qword
+    uint32 y = opsize >= 4 ? opsize : 4;  // dword or qword
 
     x64_Operand E(uint32 opsize, adsize, ModRM_SIB_disp modrm) {
         if modrm.rip_relative     return {kind=.Memory,   reg=.rip, imm_value=modrm.disp, opsize=opsize};
@@ -352,7 +500,7 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
         case rAX:   return {kind=.Register, reg=select_gpr(0, v), opsize=v};
         case colb:  return {kind=.Register, reg=select_gpr(opcode_reg, b), opsize=b};
         case colv:  return {kind=.Register, reg=select_gpr(opcode_reg, v), opsize=v};
-        case Ib:    return {kind=.Immediate, imm_value=read_unsigned_imm(pptr, b), opsize=b};
+        case Ib:    return {kind=.Immediate, imm_value=read_unsigned_imm(pptr, b), opsize=b}; // TODO: signed or unsigned. imul requires the immediate to be sign-extended
         case Iw:    return {kind=.Immediate, imm_value=read_unsigned_imm(pptr, w), opsize=w};
         case Iz:    return {kind=.Immediate, imm_value=read_unsigned_imm(pptr, z), opsize=z};
         case Iv:    return {kind=.Immediate, imm_value=read_unsigned_imm(pptr, v), opsize=v};
@@ -373,6 +521,15 @@ x64_Operand make_operand(byte** pptr, uint32 opsize, adsize, byte opcode_reg, en
         case I1:    return {kind=.Immediate, imm_value=1};
         case M:     if modrm.mem_is_register return {}; else return E(v, adsize, modrm);
         case CL:    return {};
+        case Cd:    return {};
+        case Dd:    return {};
+        case Rd:    return {};
+        case Ey:    return E(y, adsize, modrm);
+        case FS:    return {};
+        case GS:    return {};
+        case Mp:    return {};
+        case My:    if modrm.mem_is_register return {}; else return E(y, adsize, modrm);
+        case Gy:    return {kind=.Register, reg=select_gpr(modrm.reg, y), opsize=y};
     }
 }
 
@@ -407,15 +564,15 @@ x64_Instruction decode_instruction(byte** pptr) {
 
     byte opcode = @ptr++;
 
-
     if opcode & 0b1111_1000 == 0xD8 { // ESC escape to coprocessor instruction set
 
     }
 
-    x64_Operation* opcode_map = x64_primary_opcode_map;
+    x64_Opcode_Map_Entry* opcode_map = x64_primary_opcode_map;
 
     if opcode == 0x0F { // 2-byte escape
         opcode = @ptr++;
+        opcode_map = x64_secondary_opcode_map;
 
         if opcode == 0x38 { // 3-byte escape
             opcode = @ptr++;
@@ -423,19 +580,14 @@ x64_Instruction decode_instruction(byte** pptr) {
         } else if opcode == 0x3A { // 3-byte escape
             opcode = @ptr++;
             opcode_map = x64_0F_3A_opcode_map;
-        } else {
-            opcode_map = x64_secondary_opcode_map;
         }
     }
 
-    inst.operation = opcode_map[opcode];
-
-    byte opcode_reg = bit_ext_mem | (opcode & 0b111);
-
-    let encoding = x64_operand_encoding[opcode];
+    x64_Opcode_Map_Entry entry = opcode_map[opcode];
+    inst.operation = entry.operation;
 
     ModRM_SIB_disp modrm = {};
-    for 0 .. x64_Instruction_Max_Operands  if has_modrm(encoding.operands[it]) {
+    for 0 .. x64_Instruction_Max_Operands  if has_modrm(entry.operands[it]) {
         modrm = decode_modrm(*ptr);
         break;
     }
@@ -444,7 +596,9 @@ x64_Instruction decode_instruction(byte** pptr) {
     modrm.idx |= bit_ext_idx;
     modrm.mem |= bit_ext_mem;
 
-    for 0 .. x64_Instruction_Max_Operands  inst.operands[it] = make_operand(*ptr, opsize, adsize, opcode_reg, encoding.operands[it], modrm);
+    byte opcode_reg = bit_ext_mem | (opcode & 0b111);
+
+    for 0 .. x64_Instruction_Max_Operands  inst.operands[it] = make_operand(*ptr, opsize, adsize, opcode_reg, entry.operands[it], modrm);
 
     @pptr = ptr;
     return inst;
@@ -639,7 +793,7 @@ void cfg(void* entryptr) {
         if inst.operation == .jmp {
             byte* jmp_loc = ptr + inst.operands[0].imm_value;
             ptr = jmp_loc;
-            printf("Jumped");
+            printf("Jumped\n");
         }
 
         if inst.operation == .ret break;
@@ -905,6 +1059,86 @@ void run_tests() {
     test({0xe8, 0x10, 0x00, 0x00, 0x00} as byte[], "call 0x10");
 
     test({0x8A, 0x04, 0x25, 0x01, 0x00, 0x00, 0x00} as byte[], "mov al, byte ptr ds:0x1");
+
+    print("push/pop 0x50 to 0x5F\n");
+    test({0x50} as byte[], "push rax");
+    test({0x51} as byte[], "push rcx");
+    test({0x52} as byte[], "push rdx");
+    test({0x53} as byte[], "push rbx");
+    test({0x54} as byte[], "push rsp");
+    test({0x55} as byte[], "push rbp");
+    test({0x56} as byte[], "push rsi");
+    test({0x57} as byte[], "push rdi");
+
+    test({0x41, 0x50} as byte[], "push r8");
+    test({0x41, 0x51} as byte[], "push r9");
+    test({0x41, 0x52} as byte[], "push r10");
+    test({0x41, 0x53} as byte[], "push r11");
+    test({0x41, 0x54} as byte[], "push r12");
+    test({0x41, 0x55} as byte[], "push r13");
+    test({0x41, 0x56} as byte[], "push r14");
+    test({0x41, 0x57} as byte[], "push r15");
+
+    test({0x66, 0x50} as byte[], "push ax");
+    test({0x66, 0x51} as byte[], "push cx");
+    test({0x66, 0x52} as byte[], "push dx");
+    test({0x66, 0x53} as byte[], "push bx");
+    test({0x66, 0x54} as byte[], "push sp");
+    test({0x66, 0x55} as byte[], "push bp");
+    test({0x66, 0x56} as byte[], "push si");
+    test({0x66, 0x57} as byte[], "push di");
+
+    test({0x66, 0x41, 0x50} as byte[], "push r8w");
+    test({0x66, 0x41, 0x51} as byte[], "push r9w");
+    test({0x66, 0x41, 0x52} as byte[], "push r10w");
+    test({0x66, 0x41, 0x53} as byte[], "push r11w");
+    test({0x66, 0x41, 0x54} as byte[], "push r12w");
+    test({0x66, 0x41, 0x55} as byte[], "push r13w");
+    test({0x66, 0x41, 0x56} as byte[], "push r14w");
+    test({0x66, 0x41, 0x57} as byte[], "push r15w");
+
+    // pop
+    test({0x58} as byte[], "pop rax");
+    test({0x59} as byte[], "pop rcx");
+    test({0x5A} as byte[], "pop rdx");
+    test({0x5B} as byte[], "pop rbx");
+    test({0x5C} as byte[], "pop rsp");
+    test({0x5D} as byte[], "pop rbp");
+    test({0x5E} as byte[], "pop rsi");
+    test({0x5F} as byte[], "pop rdi");
+
+    test({0x41, 0x58} as byte[], "pop r8");
+    test({0x41, 0x59} as byte[], "pop r9");
+    test({0x41, 0x5A} as byte[], "pop r10");
+    test({0x41, 0x5B} as byte[], "pop r11");
+    test({0x41, 0x5C} as byte[], "pop r12");
+    test({0x41, 0x5D} as byte[], "pop r13");
+    test({0x41, 0x5E} as byte[], "pop r14");
+    test({0x41, 0x5F} as byte[], "pop r15");
+
+    test({0x66, 0x58} as byte[], "pop ax");
+    test({0x66, 0x59} as byte[], "pop cx");
+    test({0x66, 0x5A} as byte[], "pop dx");
+    test({0x66, 0x5B} as byte[], "pop bx");
+    test({0x66, 0x5C} as byte[], "pop sp");
+    test({0x66, 0x5D} as byte[], "pop bp");
+    test({0x66, 0x5E} as byte[], "pop si");
+    test({0x66, 0x5F} as byte[], "pop di");
+
+    test({0x66, 0x41, 0x58} as byte[], "pop r8w");
+    test({0x66, 0x41, 0x59} as byte[], "pop r9w");
+    test({0x66, 0x41, 0x5A} as byte[], "pop r10w");
+    test({0x66, 0x41, 0x5B} as byte[], "pop r11w");
+    test({0x66, 0x41, 0x5C} as byte[], "pop r12w");
+    test({0x66, 0x41, 0x5D} as byte[], "pop r13w");
+    test({0x66, 0x41, 0x5E} as byte[], "pop r14w");
+    test({0x66, 0x41, 0x5F} as byte[], "pop r15w");
+
+    print("\n");
+    test({0x6b, 0xc1, 0x01} as byte[],                   "imul eax, ecx, 0x1");
+    test({0x69, 0xc1, 0x80, 0x00, 0x00, 0x00} as byte[], "imul eax, ecx, 0x80");
+    test({0x6b, 0xc1, 0xff} as byte[],                   "imul eax, ecx, 0xffffffff");
+
 
     // this would be a cool hex array literal: 0x(66 41 97)
     //                             instead of: {0x66, 0x41, 0x97} as byte[]

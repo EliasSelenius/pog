@@ -136,15 +136,33 @@ struct Image_Import_Descriptor {
     //     dword   Characteristics;
     //     dword   OriginalFirstThunk;
     // } dummyunionname;
-    uint32 Characteristics_OriginalFirstThunk;
 
+    uint32 OriginalFirstThunk; // RVA to import lookup table (ILT)
     uint32 TimeDateStamp;
     uint32 ForwarderChain;
-    uint32 Name;
-    uint32 FirstThunk;
+    uint32 Name; // RVA to name
+    uint32 FirstThunk; // RVA to import address table (IAT)
 }
 
-void read_exe(char* filename) {
+struct PE32 {
+    byte* ptr;
+    Image_Nt_Headers* nt_headers;
+    Image_Section_Header[] section_headers;
+}
+
+uint64 offset_from_rva(PE32* pe, uint64 rva) {
+    for 0 .. pe.section_headers.length {
+        let sec = pe.section_headers[it];
+        if sec.VirtualAddress <= rva
+        if rva < sec.VirtualAddress + sec.SizeOfRawData {
+            return sec.PointerToRawData + (rva - sec.VirtualAddress);
+        }
+    }
+
+    return rva;
+}
+
+PE32 read_pe32(char* filename) {
     byte[] bytes = read_binary_file(filename);
     byte* ptr = bytes.data;
 
@@ -156,31 +174,75 @@ void read_exe(char* filename) {
 
     Image_Section_Header* sec_header = ptr + file_addr_of_new_exe_header + sizeof Image_Nt_Headers;
 
+    Image_Section_Header[] section_headers;
+    section_headers.data   = sec_header;
+    section_headers.length = nt_headers.file_header.NumberOfSections;
 
-    // VA = ImageBase + RVA
-
-    // aVA = ptr + file_pointer
-
-    // ptr - ImageBase = ptr_RVA
-
+    PE32 pe = {};
+    pe.ptr = ptr;
+    pe.nt_headers = nt_headers;
+    pe.section_headers = section_headers;
 
 
-    // if ImageBase == ptr
-    // then file_pointer = RVA
 
+
+    uint64 imports = offset_from_rva(*pe, opt_header.DataDirectory[Image_Directory_Entry_Import].VirtualAddress)
+    Image_Import_Descriptor* import_desc = ptr + imports;
+
+    while true {
+        Image_Import_Descriptor zero = {};
+        if memcmp(import_desc, *zero, sizeof Image_Import_Descriptor) == 0 break;
+
+        char* name = ptr + offset_from_rva(*pe, import_desc.Name);
+
+        print("import descriptor:\n");
+        printf("    OriginalFirstThunk: %x\n", import_desc.OriginalFirstThunk);
+        printf("    TimeDateStamp     : %x\n", import_desc.TimeDateStamp);
+        printf("    ForwarderChain    : %x\n", import_desc.ForwarderChain);
+        printf("    Name              : %x (%s)\n", import_desc.Name, import_desc.Name == 0 ? "" : name);
+        printf("    FirstThunk        : %x\n", import_desc.FirstThunk);
+
+        uint64* ILT = ptr + offset_from_rva(*pe, import_desc.OriginalFirstThunk);
+        uint64* i = ILT;
+        while true {
+            uint64 value = @i++;
+            if value == 0 break;
+
+            let is_ordinal = value & 0x8000_0000_0000_0000;
+            if is_ordinal {
+                uint16 ordinal = value as uint16;
+            } else {
+                uint64 hint_name_rva = value & 0x0000_0000_7fff_ffff;
+                uint64 ofs = offset_from_rva(*pe, hint_name_rva);
+                uint16 hint = @((ptr + ofs) as uint16*);
+                char*  name = ptr + ofs + 2;
+                printf("        %hx \"%s\"\n", hint, name);
+            }
+
+        }
+
+        import_desc++;
+    }
+
+    return pe;
+}
+
+void print_pe32(PE32* pe) {
     print("NT Headers: ", sizeof Image_Nt_Headers, "\n");
 
-    char* magicnr_PE = (*nt_headers.signature) as char*;
+    char* magicnr_PE = (*pe.nt_headers.signature) as char*;
     print("Magic Nr.: ", magicnr_PE[0], magicnr_PE[1], magicnr_PE[2], magicnr_PE[3], "\n");
 
     print("coff_header:", sizeof COFF_File_Header, "\n");
-    print("    Machine             : ", coff_header.Machine, "\n");
-    print("    NumberOfSections    : ", coff_header.NumberOfSections, "\n");
-    print("    TimeDateStamp       : ", coff_header.TimeDateStamp, "\n");
-    print("    PointerToSymbolTable: ", coff_header.PointerToSymbolTable, "\n");
-    print("    NumberOfSymbols     : ", coff_header.NumberOfSymbols, "\n");
-    print("    SizeOfOptionalHeader: ", coff_header.SizeOfOptionalHeader, "\n");
-    print("    Characteristics     : ", coff_header.Characteristics, "\n");
+    print("    Machine             : ", pe.nt_headers.file_header.Machine, "\n");
+    print("    NumberOfSections    : ", pe.nt_headers.file_header.NumberOfSections, "\n");
+    print("    TimeDateStamp       : ", pe.nt_headers.file_header.TimeDateStamp, "\n");
+    print("    PointerToSymbolTable: ", pe.nt_headers.file_header.PointerToSymbolTable, "\n");
+    print("    NumberOfSymbols     : ", pe.nt_headers.file_header.NumberOfSymbols, "\n");
+    print("    SizeOfOptionalHeader: ", pe.nt_headers.file_header.SizeOfOptionalHeader, "\n");
+    print("    Characteristics     : ", pe.nt_headers.file_header.Characteristics, "\n");
+
+    let opt_header = pe.nt_headers.optional_header;
 
     print("optional_header:", sizeof Image_Optional_Header_64, "\n");
     printf("    Magic                      : %hx\n", opt_header.Magic);
@@ -223,52 +285,21 @@ void read_exe(char* filename) {
     print("    DataDirectory: (VirtualAddress, Size)\n");
     for 0 .. Image_Numberof_Directory_Entries {
         let entry = opt_header.DataDirectory[it];
-        let name = make_string(directory_entry_names[it]);
-        let str  = concat(name, trim_start(make_string("              :"), name.length));
-
-        // print("        ", str, " ", entry.VirtualAddress, ", ", entry.Size, "\n");
         printf("        %02d. %-15s: %8x, %8x\n", it, directory_entry_names[it], entry.VirtualAddress, entry.Size);
     }
 
-    Image_Section_Header[] section_headers = {
-        length = nt_headers.file_header.NumberOfSections,
-        data = sec_header
-    };
-
-
-    Image_Section_Header* idata = null;
-
-    for 0 .. nt_headers.file_header.NumberOfSections {
-        let sec = sec_header + it;
-        print("Section\n");
+    for 0 .. pe.section_headers.length {
+        let sec = pe.section_headers[it];
+        print("Section Header\n");
         print("    Name                       : ", sec.Name as char*, "\n");
-        print("    PhysicalAddress_VirtualSize: ", sec.PhysicalAddress_VirtualSize, "\n");
-        print("    VirtualAddress             : ", sec.VirtualAddress, "\n");
-        print("    SizeOfRawData              : ", sec.SizeOfRawData, "\n");
-        print("    PointerToRawData           : ", sec.PointerToRawData, "\n");
-        print("    PointerToRelocations       : ", sec.PointerToRelocations, "\n");
-        print("    PointerToLinenumbers       : ", sec.PointerToLinenumbers, "\n");
+        printf("    PhysicalAddress_VirtualSize: %x\n", sec.PhysicalAddress_VirtualSize);
+        printf("    VirtualAddress             : %x\n", sec.VirtualAddress);
+        printf("    SizeOfRawData              : %x\n", sec.SizeOfRawData);
+        printf("    PointerToRawData           : %x\n", sec.PointerToRawData);
+        printf("    PointerToRelocations       : %x\n", sec.PointerToRelocations);
+        printf("    PointerToLinenumbers       : %x\n", sec.PointerToLinenumbers);
         print("    NumberOfRelocations        : ", sec.NumberOfRelocations, "\n");
         print("    NumberOfLinenumbers        : ", sec.NumberOfLinenumbers, "\n");
         print("    Characteristics            : ", sec.Characteristics, "\n");
-
-        string name = make_string(sec.Name as char*);
-        if string_equals(name, ".idata") idata = sec;
-    }
-
-    uint64 offset_from_rva(Image_Section_Header* sec, uint64 rva) {
-        return sec.PointerToRawData + (rva - sec.VirtualAddress);
-    }
-
-    Image_Import_Descriptor* first_import_desc = ptr + idata.PointerToRawData;
-    Image_Import_Descriptor* import_desc = first_import_desc;
-    while true {
-        Image_Import_Descriptor zero = {};
-        if memcmp(import_desc, *zero, sizeof Image_Import_Descriptor) == 0 break;
-
-        print(@import_desc, "\n");
-
-        import_desc++;
     }
 }
-

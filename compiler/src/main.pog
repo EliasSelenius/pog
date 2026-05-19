@@ -28,8 +28,8 @@ void main() {
         print_proc(*proc1);
     }
 
-    read_exe("output.exe");
-
+    PE32 pe = read_pe32("output.exe");
+    print_pe32(*pe);
 
     // char* file_buffer = fileread("src/main.pog");
     // let unit = parse(file_buffer);

@@ -792,12 +792,15 @@ struct x64_Decoder {
 struct x64_Procedure {
     x64_BasicBlock* start_block;
     x64_BasicBlock*[..] blocks;
+    byte*[..] call_addresses;
 }
 
-void procedure_cfg(byte* entryptr) {
+x64_Procedure procedure_cfg(byte* entryptr) {
     x64_Procedure proc = {};
-    proc.start_block = make_bb(*proc, entryptr);
     proc.blocks = list_create(sizeof x64_BasicBlock*);
+    proc.call_addresses = list_create(sizeof byte*);
+    proc.start_block = make_bb(*proc, entryptr);
+
 
     void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
         if bb == null return;
@@ -809,9 +812,14 @@ void procedure_cfg(byte* entryptr) {
 
     traverse_cfg(*proc, proc.start_block);
 
+    return proc;
+}
+
+void print_proc(x64_Procedure* proc) {
+    printf("Procedure at %p\n", proc.start_block.start);
     for 0 .. list_length(proc.blocks) {
         print("Block", it, "\n");
-        print_block(proc.blocks[it])
+        print_block(proc.blocks[it]);
     }
 }
 
@@ -864,40 +872,12 @@ x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr) {
 
             case .ret: return bb;
 
-            case .call: break;
-        }
-    }
-}
-
-
-void cfg(void* entryptr) {
-    byte* ptr = entryptr;
-
-    while true {
-        byte* start = ptr;
-        let inst = decode_instruction(*ptr);
-        uint32 instbytes = (ptr - start) as uint32;
-
-        printf("%p", start);
-        for 0 .. 15  if (it < instbytes) printf(" %02x", start[it]); else printf("   ");
-
-        char* dasm = stringify(inst, temp_builder()).chars;
-        printf("%s\n", dasm);
-
-        byte* jmp_loc = ptr + inst.operands[0].imm_value;
-        switch inst.operation {
-            case .Jcc:
-            case .jmp:
-                ptr = jmp_loc;
-                printf("Jumped\n");
+            case .call:
+                list_add(*proc.call_addresses, *jmp_addr);
                 break;
-
-            case .call: break;
-            case .ret: return;
         }
     }
 }
-
 
 
 

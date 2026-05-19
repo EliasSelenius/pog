@@ -16,20 +16,20 @@ include "src/x64asm.pog";
 
 void main() {
 
-    // read_exe("output.exe");
-
 
     run_tests();
 
-    // print("HELLO:\n");
-    // cfg(HELLO);
+    let proc = procedure_cfg(HELLO);
+    print_proc(*proc);
 
+    for 0 .. list_length(proc.call_addresses) {
+        let addr = proc.call_addresses[it];
+        let proc1 = procedure_cfg(addr);
+        print_proc(*proc1);
+    }
 
-    // print("read_exe:\n");
-    // cfg(read_exe);
+    read_exe("output.exe");
 
-
-    procedure_cfg(HELLO);
 
     // char* file_buffer = fileread("src/main.pog");
     // let unit = parse(file_buffer);
@@ -38,7 +38,6 @@ void main() {
     // print_ast(*sb, unit);
     // print(to_string(sb));
     // sb_free(sb);
-
 }
 
 void HELLO() {

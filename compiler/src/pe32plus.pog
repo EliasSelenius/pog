@@ -55,6 +55,8 @@ struct Image_Nt_Headers {
     Image_Optional_Header_64 optional_header;
 }
 
+const Image_Optional_Header_Magic_Nr_PE32     = 0x10b; // for PE32
+const Image_Optional_Header_Magic_Nr_PE32plus = 0x20b; // for PE32+
 struct Image_Optional_Header_64 {
     uint16 Magic;
     uint8  MajorLinkerVersion;
@@ -85,9 +87,62 @@ struct Image_Optional_Header_64 {
     uint64 SizeOfHeapCommit;
     uint32 LoaderFlags;
     uint32 NumberOfRvaAndSizes;
-    // IMAGE_DATA_DIRECTORY[IMAGE_NUMBEROF_DIRECTORY_ENTRIES] DataDirectory;
+    Image_Data_Directory[Image_Numberof_Directory_Entries] DataDirectory;
 }
 
+const Image_Numberof_Directory_Entries = 16;
+struct Image_Data_Directory {
+    uint32 VirtualAddress;
+    uint32 Size;
+}
+
+const Image_Directory_Entry_Export          =  0;   // Export Directory
+const Image_Directory_Entry_Import          =  1;   // Import Directory
+const Image_Directory_Entry_Resource        =  2;   // Resource Directory
+const Image_Directory_Entry_Exception       =  3;   // Exception Directory
+const Image_Directory_Entry_Security        =  4;   // Security Directory
+const Image_Directory_Entry_Basereloc       =  5;   // Base Relocation Table
+const Image_Directory_Entry_Debug           =  6;   // Debug Directory
+const Image_Directory_Entry_Architecture    =  7;   // Architecture Specific Data
+const Image_Directory_Entry_Globalptr       =  8;   // RVA of GP
+const Image_Directory_Entry_TLS             =  9;   // TLS Directory
+const Image_Directory_Entry_Load_config     = 10;   // Load Configuration Directory
+const Image_Directory_Entry_Bound_import    = 11;   // Bound Import Directory in headers
+const Image_Directory_Entry_IAT             = 12;   // Import Address Table
+const Image_Directory_Entry_Delay_import    = 13;   // Delay Load Import Descriptors
+const Image_Directory_Entry_COM_descriptor  = 14;   // COM Runtime descriptor
+
+struct Image_Section_Header {
+    char[8] Name;
+
+    // union {
+    //         uint32   PhysicalAddress;
+    //         uint32   VirtualSize;
+    // } Misc;
+    uint32 PhysicalAddress_VirtualSize; // I dont support unions yet
+
+    uint32 VirtualAddress;
+    uint32 SizeOfRawData;
+    uint32 PointerToRawData;
+    uint32 PointerToRelocations;
+    uint32 PointerToLinenumbers;
+    uint16 NumberOfRelocations;
+    uint16 NumberOfLinenumbers;
+    uint32 Characteristics;
+}
+
+struct Image_Import_Descriptor {
+    // union {
+    //     dword   Characteristics;
+    //     dword   OriginalFirstThunk;
+    // } dummyunionname;
+    uint32 Characteristics_OriginalFirstThunk;
+
+    uint32 TimeDateStamp;
+    uint32 ForwarderChain;
+    uint32 Name;
+    uint32 FirstThunk;
+}
 
 void read_exe(char* filename) {
     byte[] bytes = read_binary_file(filename);
@@ -95,12 +150,30 @@ void read_exe(char* filename) {
 
     uint32 file_addr_of_new_exe_header = @(*bytes[0x3c] as uint32*);
 
-    char* magicnr_PE = ptr + file_addr_of_new_exe_header;
+    Image_Nt_Headers* nt_headers = ptr + file_addr_of_new_exe_header;
+    COFF_File_Header* coff_header = *nt_headers.file_header;
+    Image_Optional_Header_64* opt_header = *nt_headers.optional_header;
 
+    Image_Section_Header* sec_header = ptr + file_addr_of_new_exe_header + sizeof Image_Nt_Headers;
+
+
+    // VA = ImageBase + RVA
+
+    // aVA = ptr + file_pointer
+
+    // ptr - ImageBase = ptr_RVA
+
+
+
+    // if ImageBase == ptr
+    // then file_pointer = RVA
+
+    print("NT Headers: ", sizeof Image_Nt_Headers, "\n");
+
+    char* magicnr_PE = (*nt_headers.signature) as char*;
     print("Magic Nr.: ", magicnr_PE[0], magicnr_PE[1], magicnr_PE[2], magicnr_PE[3], "\n");
 
-    COFF_File_Header* coff_header = ptr + file_addr_of_new_exe_header + 4;
-    print("coff_header:\n");
+    print("coff_header:", sizeof COFF_File_Header, "\n");
     print("    Machine             : ", coff_header.Machine, "\n");
     print("    NumberOfSections    : ", coff_header.NumberOfSections, "\n");
     print("    TimeDateStamp       : ", coff_header.TimeDateStamp, "\n");
@@ -109,5 +182,93 @@ void read_exe(char* filename) {
     print("    SizeOfOptionalHeader: ", coff_header.SizeOfOptionalHeader, "\n");
     print("    Characteristics     : ", coff_header.Characteristics, "\n");
 
+    print("optional_header:", sizeof Image_Optional_Header_64, "\n");
+    printf("    Magic                      : %hx\n", opt_header.Magic);
+    print("    MajorLinkerVersion         : ", opt_header.MajorLinkerVersion as uint32, "\n");
+    print("    MinorLinkerVersion         : ", opt_header.MinorLinkerVersion as uint32, "\n");
+    print("    SizeOfCode                 : ", opt_header.SizeOfCode, "\n");
+    print("    SizeOfInitializedData      : ", opt_header.SizeOfInitializedData, "\n");
+    print("    SizeOfUninitializedData    : ", opt_header.SizeOfUninitializedData, "\n");
+    print("    AddressOfEntryPoint        : ", opt_header.AddressOfEntryPoint, "\n");
+    print("    BaseOfCode                 : ", opt_header.BaseOfCode, "\n");
+    print("    ImageBase                  : ", opt_header.ImageBase, "\n");
+    print("    SectionAlignment           : ", opt_header.SectionAlignment, "\n");
+    print("    FileAlignment              : ", opt_header.FileAlignment, "\n");
+    print("    MajorOperatingSystemVersion: ", opt_header.MajorOperatingSystemVersion, "\n");
+    print("    MinorOperatingSystemVersion: ", opt_header.MinorOperatingSystemVersion, "\n");
+    print("    MajorImageVersion          : ", opt_header.MajorImageVersion, "\n");
+    print("    MinorImageVersion          : ", opt_header.MinorImageVersion, "\n");
+    print("    MajorSubsystemVersion      : ", opt_header.MajorSubsystemVersion, "\n");
+    print("    MinorSubsystemVersion      : ", opt_header.MinorSubsystemVersion, "\n");
+    print("    Win32VersionValue          : ", opt_header.Win32VersionValue, "\n");
+    print("    SizeOfImage                : ", opt_header.SizeOfImage, "\n");
+    print("    SizeOfHeaders              : ", opt_header.SizeOfHeaders, "\n");
+    print("    CheckSum                   : ", opt_header.CheckSum, "\n");
+    print("    Subsystem                  : ", opt_header.Subsystem, "\n");
+    print("    DllCharacteristics         : ", opt_header.DllCharacteristics, "\n");
+    print("    SizeOfStackReserve         : ", opt_header.SizeOfStackReserve, "\n");
+    print("    SizeOfStackCommit          : ", opt_header.SizeOfStackCommit, "\n");
+    print("    SizeOfHeapReserve          : ", opt_header.SizeOfHeapReserve, "\n");
+    print("    SizeOfHeapCommit           : ", opt_header.SizeOfHeapCommit, "\n");
+    print("    LoaderFlags                : ", opt_header.LoaderFlags, "\n");
+    print("    NumberOfRvaAndSizes        : ", opt_header.NumberOfRvaAndSizes, "\n");
 
+    char*[Image_Numberof_Directory_Entries] directory_entry_names = {
+        "Export", "Import", "Resource", "Exception",
+        "Security", "Basereloc", "Debug", "Architecture",
+        "Globalptr", "TLS", "Load_config", "Bound_import",
+        "IAT", "Delay_import", "COM_descriptor",
+    };
+
+    print("    DataDirectory: (VirtualAddress, Size)\n");
+    for 0 .. Image_Numberof_Directory_Entries {
+        let entry = opt_header.DataDirectory[it];
+        let name = make_string(directory_entry_names[it]);
+        let str  = concat(name, trim_start(make_string("              :"), name.length));
+
+        // print("        ", str, " ", entry.VirtualAddress, ", ", entry.Size, "\n");
+        printf("        %02d. %-15s: %8x, %8x\n", it, directory_entry_names[it], entry.VirtualAddress, entry.Size);
+    }
+
+    Image_Section_Header[] section_headers = {
+        length = nt_headers.file_header.NumberOfSections,
+        data = sec_header
+    };
+
+
+    Image_Section_Header* idata = null;
+
+    for 0 .. nt_headers.file_header.NumberOfSections {
+        let sec = sec_header + it;
+        print("Section\n");
+        print("    Name                       : ", sec.Name as char*, "\n");
+        print("    PhysicalAddress_VirtualSize: ", sec.PhysicalAddress_VirtualSize, "\n");
+        print("    VirtualAddress             : ", sec.VirtualAddress, "\n");
+        print("    SizeOfRawData              : ", sec.SizeOfRawData, "\n");
+        print("    PointerToRawData           : ", sec.PointerToRawData, "\n");
+        print("    PointerToRelocations       : ", sec.PointerToRelocations, "\n");
+        print("    PointerToLinenumbers       : ", sec.PointerToLinenumbers, "\n");
+        print("    NumberOfRelocations        : ", sec.NumberOfRelocations, "\n");
+        print("    NumberOfLinenumbers        : ", sec.NumberOfLinenumbers, "\n");
+        print("    Characteristics            : ", sec.Characteristics, "\n");
+
+        string name = make_string(sec.Name as char*);
+        if string_equals(name, ".idata") idata = sec;
+    }
+
+    uint64 offset_from_rva(Image_Section_Header* sec, uint64 rva) {
+        return sec.PointerToRawData + (rva - sec.VirtualAddress);
+    }
+
+    Image_Import_Descriptor* first_import_desc = ptr + idata.PointerToRawData;
+    Image_Import_Descriptor* import_desc = first_import_desc;
+    while true {
+        Image_Import_Descriptor zero = {};
+        if memcmp(import_desc, *zero, sizeof Image_Import_Descriptor) == 0 break;
+
+        print(@import_desc, "\n");
+
+        import_desc++;
+    }
 }
+

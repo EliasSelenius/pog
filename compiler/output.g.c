@@ -49,6 +49,9 @@ typedef struct Pog_Binary_Op Pog_Binary_Op;
 typedef struct COFF_File_Header COFF_File_Header;
 typedef struct Image_Nt_Headers Image_Nt_Headers;
 typedef struct Image_Optional_Header_64 Image_Optional_Header_64;
+typedef struct Image_Data_Directory Image_Data_Directory;
+typedef struct Image_Section_Header Image_Section_Header;
+typedef struct Image_Import_Descriptor Image_Import_Descriptor;
 typedef struct x64_Instruction x64_Instruction;
 typedef struct x64_Operand x64_Operand;
 typedef struct x64_Opcode_Map_Entry x64_Opcode_Map_Entry;
@@ -189,36 +192,28 @@ struct COFF_File_Header { // deps = 0
     uint16 SizeOfOptionalHeader;
     uint16 Characteristics;
 };
-struct Image_Optional_Header_64 { // deps = 0
-    uint16 Magic;
-    uint8 MajorLinkerVersion;
-    uint8 MinorLinkerVersion;
-    uint32 SizeOfCode;
-    uint32 SizeOfInitializedData;
-    uint32 SizeOfUninitializedData;
-    uint32 AddressOfEntryPoint;
-    uint32 BaseOfCode;
-    uint64 ImageBase;
-    uint32 SectionAlignment;
-    uint32 FileAlignment;
-    uint16 MajorOperatingSystemVersion;
-    uint16 MinorOperatingSystemVersion;
-    uint16 MajorImageVersion;
-    uint16 MinorImageVersion;
-    uint16 MajorSubsystemVersion;
-    uint16 MinorSubsystemVersion;
-    uint32 Win32VersionValue;
-    uint32 SizeOfImage;
-    uint32 SizeOfHeaders;
-    uint32 CheckSum;
-    uint16 Subsystem;
-    uint16 DllCharacteristics;
-    uint64 SizeOfStackReserve;
-    uint64 SizeOfStackCommit;
-    uint64 SizeOfHeapReserve;
-    uint64 SizeOfHeapCommit;
-    uint32 LoaderFlags;
-    uint32 NumberOfRvaAndSizes;
+struct Image_Data_Directory { // deps = 0
+    uint32 VirtualAddress;
+    uint32 Size;
+};
+struct Image_Section_Header { // deps = 0
+    char Name[8];
+    uint32 PhysicalAddress_VirtualSize;
+    uint32 VirtualAddress;
+    uint32 SizeOfRawData;
+    uint32 PointerToRawData;
+    uint32 PointerToRelocations;
+    uint32 PointerToLinenumbers;
+    uint16 NumberOfRelocations;
+    uint16 NumberOfLinenumbers;
+    uint32 Characteristics;
+};
+struct Image_Import_Descriptor { // deps = 0
+    uint32 Characteristics_OriginalFirstThunk;
+    uint32 TimeDateStamp;
+    uint32 ForwarderChain;
+    uint32 Name;
+    uint32 FirstThunk;
 };
 struct x64_Operand { // deps = 0
     x64_Operand_Kind kind;
@@ -254,6 +249,7 @@ struct x64_Decoder { // deps = 0
 struct x64_Procedure { // deps = 0
     x64_BasicBlock* start_block;
     x64_BasicBlock** blocks;
+    byte** call_addresses;
 };
 struct SR_Token { // deps = 1
     string str;
@@ -265,6 +261,38 @@ struct Pog_TokenData { // deps = 1
     uint64 integer;
     float64 decimal;
     char character;
+};
+struct Image_Optional_Header_64 { // deps = 1
+    uint16 Magic;
+    uint8 MajorLinkerVersion;
+    uint8 MinorLinkerVersion;
+    uint32 SizeOfCode;
+    uint32 SizeOfInitializedData;
+    uint32 SizeOfUninitializedData;
+    uint32 AddressOfEntryPoint;
+    uint32 BaseOfCode;
+    uint64 ImageBase;
+    uint32 SectionAlignment;
+    uint32 FileAlignment;
+    uint16 MajorOperatingSystemVersion;
+    uint16 MinorOperatingSystemVersion;
+    uint16 MajorImageVersion;
+    uint16 MinorImageVersion;
+    uint16 MajorSubsystemVersion;
+    uint16 MinorSubsystemVersion;
+    uint32 Win32VersionValue;
+    uint32 SizeOfImage;
+    uint32 SizeOfHeaders;
+    uint32 CheckSum;
+    uint16 Subsystem;
+    uint16 DllCharacteristics;
+    uint64 SizeOfStackReserve;
+    uint64 SizeOfStackCommit;
+    uint64 SizeOfHeapReserve;
+    uint64 SizeOfHeapCommit;
+    uint32 LoaderFlags;
+    uint32 NumberOfRvaAndSizes;
+    Image_Data_Directory DataDirectory[16];
 };
 struct x64_Instruction { // deps = 1
     x64_Operation operation;
@@ -286,11 +314,6 @@ struct Pog_Token { // deps = 2
     uint32 row;
     uint32 col;
     Pog_TokenData data;
-};
-struct Image_Nt_Headers { // deps = 2
-    uint32 signature;
-    COFF_File_Header file_header;
-    Image_Optional_Header_64 optional_header;
 };
 struct WIN32_FIND_DATAW { // deps = 3
     uint32 dwFileAttributes;
@@ -320,6 +343,11 @@ struct mat3 { // deps = 3
     vec3 row1;
     vec3 row2;
     vec3 row3;
+};
+struct Image_Nt_Headers { // deps = 3
+    uint32 signature;
+    COFF_File_Header file_header;
+    Image_Optional_Header_64 optional_header;
 };
 struct mat4 { // deps = 4
     vec4 row1;
@@ -573,7 +601,7 @@ static TypeInfo rtti_types[] = {
         .fields = (Array) { .length = 3, .data = (StructField[]){
             {.type_info = (rtti_types+6), .name = "nLength", .offset = 0},
             {.type_info = (rtti_types+0), .name = "lpSecurityDescriptor", .offset = 8},
-            {.type_info = (rtti_types+60), .name = "bInheritHandle", .offset = 16},
+            {.type_info = (rtti_types+63), .name = "bInheritHandle", .offset = 16},
         }},
     },
     {
@@ -588,7 +616,7 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+0), .name = "inner_type", .offset = 8},
             {.type_info = (rtti_types+7), .name = "bytesize", .offset = 16},
             {.type_info = (rtti_types+6), .name = "alignment", .offset = 24},
-            {.type_info = (rtti_types+52), .name = "kind", .offset = 28},
+            {.type_info = (rtti_types+55), .name = "kind", .offset = 28},
             {.type_info = (rtti_types+6), .name = "num_ptr", .offset = 32},
             {.type_info = (rtti_types+0), .name = "fields", .offset = 40},
             {.type_info = (rtti_types+0), .name = "entries", .offset = 56},
@@ -773,7 +801,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 4, .data = (StructField[]){
-            {.type_info = (rtti_types+53), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+56), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "row", .offset = 4},
             {.type_info = (rtti_types+6), .name = "col", .offset = 8},
             {.type_info = (rtti_types+35), .name = "data", .offset = 16},
@@ -801,7 +829,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 10, .data = (StructField[]){
-            {.type_info = (rtti_types+54), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+57), .name = "kind", .offset = 0},
             {.type_info = (rtti_types+6), .name = "ptr_degree", .offset = 4},
             {.type_info = (rtti_types+34), .name = "token", .offset = 8},
             {.type_info = (rtti_types+34), .name = "name", .offset = 64},
@@ -873,8 +901,8 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 2, .data = (StructField[]){
-            {.type_info = (rtti_types+53), .name = "token_kind", .offset = 0},
-            {.type_info = (rtti_types+54), .name = "node_kind", .offset = 4},
+            {.type_info = (rtti_types+56), .name = "token_kind", .offset = 0},
+            {.type_info = (rtti_types+57), .name = "node_kind", .offset = 4},
         }},
     },
     {
@@ -914,7 +942,7 @@ static TypeInfo rtti_types[] = {
         .alignment = 8,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 29, .data = (StructField[]){
+        .fields = (Array) { .length = 30, .data = (StructField[]){
             {.type_info = (rtti_types+5), .name = "Magic", .offset = 0},
             {.type_info = (rtti_types+4), .name = "MajorLinkerVersion", .offset = 2},
             {.type_info = (rtti_types+4), .name = "MinorLinkerVersion", .offset = 3},
@@ -944,6 +972,54 @@ static TypeInfo rtti_types[] = {
             {.type_info = (rtti_types+7), .name = "SizeOfHeapCommit", .offset = 96},
             {.type_info = (rtti_types+6), .name = "LoaderFlags", .offset = 104},
             {.type_info = (rtti_types+6), .name = "NumberOfRvaAndSizes", .offset = 108},
+            {.type_info = (rtti_types+0), .name = "DataDirectory", .offset = 112},
+        }},
+    },
+    {
+        .name = "Image_Data_Directory",
+        .inner_type = 0,
+        .bytesize = 8,
+        .alignment = 4,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 2, .data = (StructField[]){
+            {.type_info = (rtti_types+6), .name = "VirtualAddress", .offset = 0},
+            {.type_info = (rtti_types+6), .name = "Size", .offset = 4},
+        }},
+    },
+    {
+        .name = "Image_Section_Header",
+        .inner_type = 0,
+        .bytesize = 32,
+        .alignment = 4,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 10, .data = (StructField[]){
+            {.type_info = (rtti_types+0), .name = "Name", .offset = 0},
+            {.type_info = (rtti_types+6), .name = "PhysicalAddress_VirtualSize", .offset = 0},
+            {.type_info = (rtti_types+6), .name = "VirtualAddress", .offset = 4},
+            {.type_info = (rtti_types+6), .name = "SizeOfRawData", .offset = 8},
+            {.type_info = (rtti_types+6), .name = "PointerToRawData", .offset = 12},
+            {.type_info = (rtti_types+6), .name = "PointerToRelocations", .offset = 16},
+            {.type_info = (rtti_types+6), .name = "PointerToLinenumbers", .offset = 20},
+            {.type_info = (rtti_types+5), .name = "NumberOfRelocations", .offset = 24},
+            {.type_info = (rtti_types+5), .name = "NumberOfLinenumbers", .offset = 26},
+            {.type_info = (rtti_types+6), .name = "Characteristics", .offset = 28},
+        }},
+    },
+    {
+        .name = "Image_Import_Descriptor",
+        .inner_type = 0,
+        .bytesize = 20,
+        .alignment = 4,
+        .kind = 16,
+        .num_ptr = 0,
+        .fields = (Array) { .length = 5, .data = (StructField[]){
+            {.type_info = (rtti_types+6), .name = "Characteristics_OriginalFirstThunk", .offset = 0},
+            {.type_info = (rtti_types+6), .name = "TimeDateStamp", .offset = 4},
+            {.type_info = (rtti_types+6), .name = "ForwarderChain", .offset = 8},
+            {.type_info = (rtti_types+6), .name = "Name", .offset = 12},
+            {.type_info = (rtti_types+6), .name = "FirstThunk", .offset = 16},
         }},
     },
     {
@@ -954,7 +1030,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 2, .data = (StructField[]){
-            {.type_info = (rtti_types+56), .name = "operation", .offset = 0},
+            {.type_info = (rtti_types+59), .name = "operation", .offset = 0},
             {.type_info = (rtti_types+0), .name = "operands", .offset = 8},
         }},
     },
@@ -966,9 +1042,9 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 6, .data = (StructField[]){
-            {.type_info = (rtti_types+58), .name = "kind", .offset = 0},
-            {.type_info = (rtti_types+57), .name = "reg", .offset = 4},
-            {.type_info = (rtti_types+57), .name = "index", .offset = 8},
+            {.type_info = (rtti_types+61), .name = "kind", .offset = 0},
+            {.type_info = (rtti_types+60), .name = "reg", .offset = 4},
+            {.type_info = (rtti_types+60), .name = "index", .offset = 8},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
             {.type_info = (rtti_types+3), .name = "imm_value", .offset = 16},
             {.type_info = (rtti_types+6), .name = "opsize", .offset = 24},
@@ -982,7 +1058,7 @@ static TypeInfo rtti_types[] = {
         .kind = 16,
         .num_ptr = 0,
         .fields = (Array) { .length = 3, .data = (StructField[]){
-            {.type_info = (rtti_types+56), .name = "operation", .offset = 0},
+            {.type_info = (rtti_types+59), .name = "operation", .offset = 0},
             {.type_info = (rtti_types+0), .name = "operands", .offset = 4},
             {.type_info = (rtti_types+6), .name = "grp", .offset = 4},
         }},
@@ -996,12 +1072,12 @@ static TypeInfo rtti_types[] = {
         .num_ptr = 0,
         .fields = (Array) { .length = 7, .data = (StructField[]){
             {.type_info = (rtti_types+3), .name = "disp", .offset = 0},
-            {.type_info = (rtti_types+61), .name = "reg", .offset = 8},
-            {.type_info = (rtti_types+61), .name = "mem", .offset = 9},
-            {.type_info = (rtti_types+61), .name = "idx", .offset = 10},
-            {.type_info = (rtti_types+59), .name = "mem_is_register", .offset = 11},
+            {.type_info = (rtti_types+64), .name = "reg", .offset = 8},
+            {.type_info = (rtti_types+64), .name = "mem", .offset = 9},
+            {.type_info = (rtti_types+64), .name = "idx", .offset = 10},
+            {.type_info = (rtti_types+62), .name = "mem_is_register", .offset = 11},
             {.type_info = (rtti_types+6), .name = "scale", .offset = 12},
-            {.type_info = (rtti_types+59), .name = "rip_relative", .offset = 16},
+            {.type_info = (rtti_types+62), .name = "rip_relative", .offset = 16},
         }},
     },
     {
@@ -1032,13 +1108,14 @@ static TypeInfo rtti_types[] = {
     {
         .name = "x64_Procedure",
         .inner_type = 0,
-        .bytesize = 16,
+        .bytesize = 24,
         .alignment = 8,
         .kind = 16,
         .num_ptr = 0,
-        .fields = (Array) { .length = 2, .data = (StructField[]){
+        .fields = (Array) { .length = 3, .data = (StructField[]){
             {.type_info = (rtti_types+0), .name = "start_block", .offset = 0},
             {.type_info = (rtti_types+0), .name = "blocks", .offset = 8},
+            {.type_info = (rtti_types+0), .name = "call_addresses", .offset = 16},
         }},
     },
     {
@@ -1991,10 +2068,10 @@ static char hex_nibble(byte val);
 static string hex_overload1(uint64 val);
 static string hex_overload2(uint64 val, StringBuilder* sb);
 static string stringify_overload2(x64_Operand op, StringBuilder* sb);
-static void procedure_cfg(byte* entryptr);
+static x64_Procedure procedure_cfg(byte* entryptr);
+static void print_proc(x64_Procedure* proc);
 static void print_block(x64_BasicBlock* bb);
 static x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr);
-static void cfg(void* entryptr);
 static void run_tests();
 
 // Declarations
@@ -2011,7 +2088,14 @@ static uint32 total_failed = 0;
 // Implementations
 void __main() {
     run_tests();
-    procedure_cfg(HELLO);
+    x64_Procedure proc = procedure_cfg(HELLO);
+    print_proc(&proc);
+    for (int32 it = 0; it < list_length((void*)(proc.call_addresses)); it++) {
+        byte* addr = proc.call_addresses[it];
+        x64_Procedure proc1 = procedure_cfg(addr);
+        print_proc(&proc1);
+    }
+    read_exe("output.exe");
 }
 static void HELLO() {
     float32 f = 0;
@@ -4111,7 +4195,7 @@ static void print_tokens(Pog_Token* tokens) {
     printf("%s", "\n\n\n");
     for (int32 it = 0; it < list_length((void*)(tokens)); it++) {
         Pog_Token token = tokens[it];
-        printf("%d%s%s%s%c%s%.*s%s%llu%s%Lf%s", it, " ", get_str_overload1(token.kind), " (", token.data.character, ") (\"", token.data.str.length, token.data.str.chars, "\") int=", token.data.integer, " decimal=", token.data.decimal, "\n");
+        printf("%d%s%s%s%c%s%.*s%s%llu%s%Lf%s", it, " ", get_str_overload1(token.kind), " (", token.data.character, ") (\"", (token.data.str).length, (token.data.str).chars, "\") int=", token.data.integer, " decimal=", token.data.decimal, "\n");
     }
 }
 static char* get_str_overload2(Pog_Nodekind kind) {
@@ -4957,10 +5041,14 @@ static void read_exe(char* filename) {
     Array bytes = read_binary_file(filename);
     byte* ptr = bytes.data;
     uint32 file_addr_of_new_exe_header = *((uint32*)&((byte*)bytes.data)[60]);
-    char* magicnr_PE = (ptr + file_addr_of_new_exe_header);
+    Image_Nt_Headers* nt_headers = (ptr + file_addr_of_new_exe_header);
+    COFF_File_Header* coff_header = &nt_headers->file_header;
+    Image_Optional_Header_64* opt_header = &nt_headers->optional_header;
+    Image_Section_Header* sec_header = ((ptr + file_addr_of_new_exe_header) + sizeof(Image_Nt_Headers));
+    printf("%s%d%s", "NT Headers: ", (uint32)sizeof(Image_Nt_Headers), "\n");
+    char* magicnr_PE = (char*)(&nt_headers->signature);
     printf("%s%c%c%c%c%s", "Magic Nr.: ", magicnr_PE[0], magicnr_PE[1], magicnr_PE[2], magicnr_PE[3], "\n");
-    COFF_File_Header* coff_header = ((ptr + file_addr_of_new_exe_header) + 4);
-    printf("%s", "coff_header:\n");
+    printf("%s%d%s", "coff_header:", (uint32)sizeof(COFF_File_Header), "\n");
     printf("%s%hu%s", "    Machine             : ", coff_header->Machine, "\n");
     printf("%s%hu%s", "    NumberOfSections    : ", coff_header->NumberOfSections, "\n");
     printf("%s%u%s", "    TimeDateStamp       : ", coff_header->TimeDateStamp, "\n");
@@ -4968,6 +5056,69 @@ static void read_exe(char* filename) {
     printf("%s%u%s", "    NumberOfSymbols     : ", coff_header->NumberOfSymbols, "\n");
     printf("%s%hu%s", "    SizeOfOptionalHeader: ", coff_header->SizeOfOptionalHeader, "\n");
     printf("%s%hu%s", "    Characteristics     : ", coff_header->Characteristics, "\n");
+    printf("%s%d%s", "optional_header:", (uint32)sizeof(Image_Optional_Header_64), "\n");
+    printf("    Magic                      : %hx\n", opt_header->Magic);
+    printf("%s%u%s", "    MajorLinkerVersion         : ", (uint32)opt_header->MajorLinkerVersion, "\n");
+    printf("%s%u%s", "    MinorLinkerVersion         : ", (uint32)opt_header->MinorLinkerVersion, "\n");
+    printf("%s%u%s", "    SizeOfCode                 : ", opt_header->SizeOfCode, "\n");
+    printf("%s%u%s", "    SizeOfInitializedData      : ", opt_header->SizeOfInitializedData, "\n");
+    printf("%s%u%s", "    SizeOfUninitializedData    : ", opt_header->SizeOfUninitializedData, "\n");
+    printf("%s%u%s", "    AddressOfEntryPoint        : ", opt_header->AddressOfEntryPoint, "\n");
+    printf("%s%u%s", "    BaseOfCode                 : ", opt_header->BaseOfCode, "\n");
+    printf("%s%llu%s", "    ImageBase                  : ", opt_header->ImageBase, "\n");
+    printf("%s%u%s", "    SectionAlignment           : ", opt_header->SectionAlignment, "\n");
+    printf("%s%u%s", "    FileAlignment              : ", opt_header->FileAlignment, "\n");
+    printf("%s%hu%s", "    MajorOperatingSystemVersion: ", opt_header->MajorOperatingSystemVersion, "\n");
+    printf("%s%hu%s", "    MinorOperatingSystemVersion: ", opt_header->MinorOperatingSystemVersion, "\n");
+    printf("%s%hu%s", "    MajorImageVersion          : ", opt_header->MajorImageVersion, "\n");
+    printf("%s%hu%s", "    MinorImageVersion          : ", opt_header->MinorImageVersion, "\n");
+    printf("%s%hu%s", "    MajorSubsystemVersion      : ", opt_header->MajorSubsystemVersion, "\n");
+    printf("%s%hu%s", "    MinorSubsystemVersion      : ", opt_header->MinorSubsystemVersion, "\n");
+    printf("%s%u%s", "    Win32VersionValue          : ", opt_header->Win32VersionValue, "\n");
+    printf("%s%u%s", "    SizeOfImage                : ", opt_header->SizeOfImage, "\n");
+    printf("%s%u%s", "    SizeOfHeaders              : ", opt_header->SizeOfHeaders, "\n");
+    printf("%s%u%s", "    CheckSum                   : ", opt_header->CheckSum, "\n");
+    printf("%s%hu%s", "    Subsystem                  : ", opt_header->Subsystem, "\n");
+    printf("%s%hu%s", "    DllCharacteristics         : ", opt_header->DllCharacteristics, "\n");
+    printf("%s%llu%s", "    SizeOfStackReserve         : ", opt_header->SizeOfStackReserve, "\n");
+    printf("%s%llu%s", "    SizeOfStackCommit          : ", opt_header->SizeOfStackCommit, "\n");
+    printf("%s%llu%s", "    SizeOfHeapReserve          : ", opt_header->SizeOfHeapReserve, "\n");
+    printf("%s%llu%s", "    SizeOfHeapCommit           : ", opt_header->SizeOfHeapCommit, "\n");
+    printf("%s%u%s", "    LoaderFlags                : ", opt_header->LoaderFlags, "\n");
+    printf("%s%u%s", "    NumberOfRvaAndSizes        : ", opt_header->NumberOfRvaAndSizes, "\n");
+    char* directory_entry_names[16] = {"Export", "Import", "Resource", "Exception", "Security", "Basereloc", "Debug", "Architecture", "Globalptr", "TLS", "Load_config", "Bound_import", "IAT", "Delay_import", "COM_descriptor"};
+    printf("%s", "    DataDirectory: (VirtualAddress, Size)\n");
+    for (int32 it = 0; it < 16; it++) {
+        Image_Data_Directory entry = opt_header->DataDirectory[it];
+        string name = make_string_overload1(directory_entry_names[it]);
+        char* str = concat_overload4(name, trim_start_overload1(make_string_overload1("              :"), name.length));
+        printf("        %02d. %-15s: %8x, %8x\n", it, directory_entry_names[it], entry.VirtualAddress, entry.Size);
+    }
+    Image_Section_Header* idata = 0;
+    for (int32 it = 0; it < nt_headers->file_header.NumberOfSections; it++) {
+        Image_Section_Header* sec = (sec_header + it);
+        printf("%s", "Section\n");
+        printf("%s%s%s", "    Name                       : ", (char*)sec->Name, "\n");
+        printf("%s%u%s", "    PhysicalAddress_VirtualSize: ", sec->PhysicalAddress_VirtualSize, "\n");
+        printf("%s%u%s", "    VirtualAddress             : ", sec->VirtualAddress, "\n");
+        printf("%s%u%s", "    SizeOfRawData              : ", sec->SizeOfRawData, "\n");
+        printf("%s%u%s", "    PointerToRawData           : ", sec->PointerToRawData, "\n");
+        printf("%s%u%s", "    PointerToRelocations       : ", sec->PointerToRelocations, "\n");
+        printf("%s%u%s", "    PointerToLinenumbers       : ", sec->PointerToLinenumbers, "\n");
+        printf("%s%hu%s", "    NumberOfRelocations        : ", sec->NumberOfRelocations, "\n");
+        printf("%s%hu%s", "    NumberOfLinenumbers        : ", sec->NumberOfLinenumbers, "\n");
+        printf("%s%u%s", "    Characteristics            : ", sec->Characteristics, "\n");
+        string name = make_string_overload1((char*)sec->Name);
+        if (string_equals_overload3(name, ".idata")) idata = sec;
+    }
+    Image_Import_Descriptor* first_import_desc = (ptr + idata->PointerToRawData);
+    Image_Import_Descriptor* import_desc = first_import_desc;
+    while (1) {
+        Image_Import_Descriptor zero = (Image_Import_Descriptor) {0};
+        if (memcmp(import_desc, &zero, sizeof(Image_Import_Descriptor)) == 0) break;
+        printf("{Characteristics_OriginalFirstThunk = %u, TimeDateStamp = %u, ForwarderChain = %u, Name = %u, FirstThunk = %u}%s", (*import_desc).Characteristics_OriginalFirstThunk, (*import_desc).TimeDateStamp, (*import_desc).ForwarderChain, (*import_desc).Name, (*import_desc).FirstThunk, "\n");
+        import_desc++;
+    }
 }
 static char* to_string_overload9(x64_Operation op) {
     switch (op) {
@@ -5566,15 +5717,20 @@ static void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
     traverse_cfg(proc, bb->bb_next);
     traverse_cfg(proc, bb->bb_jump);
 }
-static void procedure_cfg(byte* entryptr) {
+static x64_Procedure procedure_cfg(byte* entryptr) {
     x64_Procedure proc = (x64_Procedure) {0};
-    proc.start_block = make_bb(&proc, entryptr);
     proc.blocks = list_create_overload1(sizeof(x64_BasicBlock*));
+    proc.call_addresses = list_create_overload1(sizeof(byte*));
+    proc.start_block = make_bb(&proc, entryptr);
     /* local procedure */;
     traverse_cfg(&proc, proc.start_block);
-    for (int32 it = 0; it < list_length((void*)(proc.blocks)); it++) {
+    return proc;
+}
+static void print_proc(x64_Procedure* proc) {
+    printf("Procedure at %p\n", proc->start_block->start);
+    for (int32 it = 0; it < list_length((void*)(proc->blocks)); it++) {
         printf("%s%d%s", "Block", it, "\n");
-        print_block(proc.blocks[it]);
+        print_block(proc->blocks[it]);
     }
 }
 static void print_block(x64_BasicBlock* bb) {
@@ -5619,31 +5775,8 @@ static x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr) {
             case 21:;
             return bb;
             case 30:;
+            list_add((void**)(&proc->call_addresses), &jmp_addr);
             break;
-        }
-    }
-}
-static void cfg(void* entryptr) {
-    byte* ptr = entryptr;
-    while (1) {
-        byte* start = ptr;
-        x64_Instruction inst = decode_instruction(&ptr);
-        uint32 instbytes = (uint32)(ptr - start);
-        printf("%p", start);
-        for (int32 it = 0; it < 15; it++) if (it < instbytes) printf(" %02x", start[it]); else printf("   ");
-        char* dasm = stringify_overload1(inst, temp_builder()).chars;
-        printf("%s\n", dasm);
-        byte* jmp_loc = (ptr + inst.operands[0].imm_value);
-        switch (inst.operation) {
-            case 14:;
-            case 31:;
-            ptr = jmp_loc;
-            printf("Jumped\n");
-            break;
-            case 30:;
-            break;
-            case 21:;
-            return;
         }
     }
 }

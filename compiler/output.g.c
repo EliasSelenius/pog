@@ -2089,6 +2089,7 @@ static char hex_nibble(byte val);
 static string hex_overload1(uint64 val);
 static string hex_overload2(uint64 val, StringBuilder* sb);
 static string stringify_overload2(x64_Operand op, StringBuilder* sb);
+static x64_BasicBlock* find_block(x64_Procedure* proc, byte* start);
 static x64_Procedure procedure_cfg(byte* entryptr);
 static void print_proc(x64_Procedure* proc);
 static void print_block(x64_BasicBlock* bb);
@@ -2109,7 +2110,7 @@ static uint32 total_failed = 0;
 // Implementations
 void __main() {
     run_tests();
-    x64_Procedure proc = procedure_cfg(HELLO);
+    x64_Procedure proc = procedure_cfg(__main);
     print_proc(&proc);
     for (int32 it = 0; it < list_length((void*)(proc.call_addresses)); it++) {
         byte* addr = proc.call_addresses[it];
@@ -2118,6 +2119,9 @@ void __main() {
     }
     PE32 pe = read_pe32("output.exe");
     print_pe32(&pe);
+    byte* entryptr = (pe.ptr + offset_from_rva(&pe, pe.nt_headers->optional_header.AddressOfEntryPoint));
+    x64_Procedure entryproc = procedure_cfg(entryptr);
+    print_proc(&entryproc);
 }
 static void HELLO() {
     float32 f = 0;
@@ -5770,19 +5774,17 @@ static string stringify_overload2(x64_Operand op, StringBuilder* sb) {
     }
     return to_string_overload8(sb);
 }
-static void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
-    if (bb == 0) return;
-    list_add((void**)(&proc->blocks), &bb);
-    traverse_cfg(proc, bb->bb_next);
-    traverse_cfg(proc, bb->bb_jump);
+static x64_BasicBlock* find_block(x64_Procedure* proc, byte* start) {
+    for (int32 it = 0; it < list_length((void*)(proc->blocks)); it++) {
+        if (proc->blocks[it]->start == start) return proc->blocks[it];
+    }
+    return 0;
 }
 static x64_Procedure procedure_cfg(byte* entryptr) {
     x64_Procedure proc = (x64_Procedure) {0};
     proc.blocks = list_create_overload1(sizeof(x64_BasicBlock*));
     proc.call_addresses = list_create_overload1(sizeof(byte*));
     proc.start_block = make_bb(&proc, entryptr);
-    /* local procedure */;
-    traverse_cfg(&proc, proc.start_block);
     return proc;
 }
 static void print_proc(x64_Procedure* proc) {
@@ -5811,8 +5813,11 @@ static void print_block(x64_BasicBlock* bb) {
     }
 }
 static x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr) {
-    x64_BasicBlock* bb = malloc(sizeof(x64_BasicBlock));
+    x64_BasicBlock* bb = find_block(proc, entryptr);
+    if (bb) return bb;
+    bb = malloc(sizeof(x64_BasicBlock));
     *bb = (x64_BasicBlock) {.start = entryptr};
+    list_add((void**)(&proc->blocks), &bb);
     byte* ptr = entryptr;
     while (1) {
         byte* inst_start = ptr;

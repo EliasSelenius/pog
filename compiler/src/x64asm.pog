@@ -795,6 +795,14 @@ struct x64_Procedure {
     byte*[..] call_addresses;
 }
 
+x64_BasicBlock* find_block(x64_Procedure* proc, byte* start) {
+    for 0 .. list_length(proc.blocks) {
+        if proc.blocks[it].start == start  return proc.blocks[it];
+    }
+
+    return null;
+}
+
 x64_Procedure procedure_cfg(byte* entryptr) {
     x64_Procedure proc = {};
     proc.blocks = list_create(sizeof x64_BasicBlock*);
@@ -802,15 +810,15 @@ x64_Procedure procedure_cfg(byte* entryptr) {
     proc.start_block = make_bb(*proc, entryptr);
 
 
-    void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
-        if bb == null return;
+    // void traverse_cfg(x64_Procedure* proc, x64_BasicBlock* bb) {
+    //     if bb == null return;
 
-        list_add(*proc.blocks, *bb);
-        traverse_cfg(proc, bb.bb_next);
-        traverse_cfg(proc, bb.bb_jump);
-    }
+    //     list_add(*proc.blocks, *bb);
+    //     traverse_cfg(proc, bb.bb_next);
+    //     traverse_cfg(proc, bb.bb_jump);
+    // }
 
-    traverse_cfg(*proc, proc.start_block);
+    // traverse_cfg(*proc, proc.start_block);
 
     return proc;
 }
@@ -847,8 +855,12 @@ void print_block(x64_BasicBlock* bb) {
 
 
 x64_BasicBlock* make_bb(x64_Procedure* proc, byte* entryptr) {
-    x64_BasicBlock* bb = alloc x64_BasicBlock;
+    x64_BasicBlock* bb = find_block(proc, entryptr);
+    if bb  return bb;
+
+    bb = alloc x64_BasicBlock;
     @bb = {start = entryptr};
+    list_add(*proc.blocks, *bb);
 
     byte* ptr = entryptr;
     while true {

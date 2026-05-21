@@ -19,7 +19,7 @@ void main() {
 
     run_tests();
 
-    let proc = procedure_cfg(HELLO);
+    let proc = procedure_cfg(__main);
     print_proc(*proc);
 
     for 0 .. list_length(proc.call_addresses) {
@@ -30,6 +30,11 @@ void main() {
 
     PE32 pe = read_pe32("output.exe");
     print_pe32(*pe);
+
+    byte* entryptr = pe.ptr + offset_from_rva(*pe, pe.nt_headers.optional_header.AddressOfEntryPoint);
+
+    let entryproc = procedure_cfg(entryptr)
+    print_proc(*entryproc);
 
     // char* file_buffer = fileread("src/main.pog");
     // let unit = parse(file_buffer);

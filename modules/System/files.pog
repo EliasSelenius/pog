@@ -6,10 +6,10 @@ enum FileKind {
 }
 
 struct FileInfo {
-    FileKind file_kind;
-    string name;
-    string path;
     uint64 bytesize;
+    FileKind file_kind;
+    string full_path;
+    string dir, name, ext;
 }
 
 void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* user_ptr) {
@@ -31,7 +31,7 @@ void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* 
             default: goto done;
         }
 
-        char* file_name = data.cFileName;
+        char* file_name = data.cFileName as char*;
 
         if string_equals(file_name, ".")
         or string_equals(file_name, "..");
@@ -40,10 +40,8 @@ void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* 
             info.file_kind = data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? .folder : .file;
             info.bytesize  = (data.nFileSizeHigh as uint64 << 32) | data.nFileSizeLow;
 
-            char* path_buffer = malloc(MAX_PATH); // TODO: parameterize the allocator
-            PathCombineA(path_buffer, temp_cstr(dir_path), file_name);
-            info.path = make_string(path_buffer);
-            info.name = trim_start(substr_to_end(info.path, '\\'), 1);
+            info.full_path = concat_path(dir_path, make_string(file_name));
+            decompose_path(info.full_path, *info.dir, *info.name, *info.ext);
 
             callback(info, user_ptr);
         }
@@ -56,6 +54,9 @@ void enumerate_directory(string dir_path, void(FileInfo, void*) callback, void* 
 // TODO: option to resue existing list
 FileInfo[..] enumerate_directory(string dir_path) {
     void append_fileinfo(FileInfo info, void* user_ptr) {
+        info.full_path = alloc_string_copy(info.full_path);
+        decompose_path(info.full_path, *info.dir, *info.name, *info.ext);
+
         let list = user_ptr as FileInfo[..]*;
         list_add(list, *info);
     }
@@ -89,3 +90,28 @@ string get_cwd() {
     GetCurrentDirectoryA(len, str.chars);
     return str;
 }
+
+string concat_path(string path1, path2) {
+    bool is_path_separator(char c) return c == '\\' or c == '/';
+
+    if is_path_separator(path1.chars[path1.length-1])  path1 = trim_end(path1, 1);
+    if is_path_separator(path2.chars[0])               path2 = trim_start(path2, 1);
+
+    return make_string(concat(path1, make_string("/"), path2));
+}
+
+void decompose_path(string full_path, string* dir, file) {
+    decompose_path(full_path, dir, file, null);
+}
+
+void decompose_path(string full_path, string* dir, file, ext) {
+    string case1 = substr_to_end(full_path, '\\');
+    string case2 = substr_to_end(full_path, '/');
+    string f = trim_start(case1.length < case2.length ? case1 : case2, 1);
+    string e = trim_start(substr_to_end(f, '.'), 1);
+
+    if ext   @ext  = e;
+    if file  @file = trim_end(f, e.length);
+    if dir   @dir  = trim_end(full_path, f.length + e.length);
+}
+

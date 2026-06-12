@@ -111,7 +111,7 @@ void decompose_path(string full_path, string* dir, file, ext) {
     string e = trim_start(substr_to_end(f, '.'), 1);
 
     if ext   @ext  = e;
-    if file  @file = trim_end(f, e.length);
-    if dir   @dir  = trim_end(full_path, f.length + e.length);
+    if file  @file = trim_end(f, e.length + 1);
+    if dir   @dir  = trim_end(full_path, f.length + e.length + 1);
 }
 

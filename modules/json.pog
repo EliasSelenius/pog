@@ -1,0 +1,180 @@
+
+enum Json_Token_Type {
+    Null;
+    False;
+    True;
+    String;
+    Number;
+    Obj_Begin;           // {
+    Obj_End;             // }
+    List_Begin;          // [
+    List_End;            // ]
+    Key_Value_Seperator; // :
+    List_Seperator;      // ,
+    EOF;
+}
+
+struct Json_Token {
+    Json_Token_Type token_type;
+    string str;
+}
+
+Json_Token json_token(char** input) {
+    again: Token token = get_next_token(@input);
+    @input += token.text.length;
+
+    switch token.kind {
+        case .unknown:         goto again;
+        case .whitespace:      goto again;
+        case .comment:         goto again;
+    }
+
+    Json_Token json = {};
+    json.str = token.text;
+
+    if token.kind == .punctuation {
+        switch (token.text.chars[0]) {
+            case '{': json.token_type = .Obj_Begin;           break;
+            case '}': json.token_type = .Obj_End;             break;
+            case '[': json.token_type = .List_Begin;          break;
+            case ']': json.token_type = .List_End;            break;
+            case ':': json.token_type = .Key_Value_Seperator; break;
+            case ',': json.token_type = .List_Seperator;      break;
+        }
+    }
+
+    if token.kind == .end_of_input {
+        json.token_type = .EOF;
+    }
+
+    if token.kind == .integer
+    or token.kind == .decimal {
+        json.token_type = .Number;
+    }
+
+    if token.kind == .string_literal {
+        json.token_type = .String;
+    }
+
+    if token.kind == .word {
+        if string_equals(token.text, make_string("null"))  json.token_type = .Null;
+        if string_equals(token.text, make_string("true"))  json.token_type = .True;
+        if string_equals(token.text, make_string("false")) json.token_type = .False;
+    }
+
+    return json;
+}
+
+Json_Token json_peak(char** json) {
+    char* input = @json;
+    return json_token(*input);
+}
+
+void json_object(char** json) {
+    while true {
+        Json_Token token = json_token(json);
+
+        if token.token_type == .Obj_End
+        or token.token_type == .EOF
+            break;
+
+        print(token.str, ":");
+    }
+}
+
+void json_value(uint32 indent, char** json) {
+    Json_Token token = json_token(json);
+    switch (token.token_type) {
+        case .Null:
+        case .False:
+        case .True:
+        case .String:
+        case .Number:
+            print(token.str);
+            break;
+
+        case .Obj_Begin: {
+            print("{");
+
+            while true {
+                token = json_peak(json);
+
+                if token.token_type == .Obj_End
+                or token.token_type == .EOF {
+                    json_token(json);
+                    break;
+                }
+
+                print("\n");
+                for 0 .. indent print(" ");
+                json_value(indent+4, json);
+                token = json_token(json);
+                assert(token.token_type == .Key_Value_Seperator);
+
+                print(": ");
+
+                json_value(indent+4, json);
+
+                token = json_peak(json);
+                if token.token_type == .List_Seperator {
+                    print(",");
+                    json_token(json);
+                }
+            }
+            print("\n");
+            for 0 .. indent print(" ");
+            print("}");
+        } break;
+
+        case .Obj_End:             break;
+
+        case .List_Begin: {
+            print("[");
+            while true {
+                token = json_peak(json);
+
+                if token.token_type == .List_End
+                or token.token_type == .EOF {
+                    json_token(json);
+                    break;
+                }
+
+                print("\n");
+                for 0 .. indent print(" ");
+                json_value(indent+4, json);
+
+                token = json_peak(json);
+                if token.token_type == .List_Seperator {
+                    print(",");
+                    json_token(json);
+                }
+            }
+            print("\n");
+            for 0 .. indent print(" ");
+            print("]");
+        } break;
+        case .List_End:            break;
+
+        case .Key_Value_Seperator: break;
+        case .List_Seperator:      break;
+        case .EOF:                 break;
+    }
+}
+
+void json_parse(char* json) {
+
+    char* cursor = json;
+    uint32 it = 0;
+    while it < 20 {
+        Json_Token token = json_token(*cursor);
+        print(token.token_type, ": ", token.str, "\n");
+        it++;
+        if token.token_type == .EOF break;
+    }
+
+
+    json_value(0, *json);
+}
+
+void json_print(char* json) {
+}

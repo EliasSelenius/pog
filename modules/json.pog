@@ -74,12 +74,12 @@ Json_Token json_peak(char** json) {
 
 enum JsonValue { Error; Null; Number; Bool; String; Object; List; }
 struct Json {
-    JsonValue json_type;
-    float64 number;
-    string str;      // for strings, or for error message if json_type = .Error
-    bool boolean;
     Json[..] keys;   // objects
     Json[..] values; // objects, lists
+    float64 number;
+    JsonValue json_type;
+    string str;      // for strings, or for error message if json_type = .Error
+    bool boolean;
 }
 
 Json json_value(char** json) {

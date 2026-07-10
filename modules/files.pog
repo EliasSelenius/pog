@@ -105,13 +105,20 @@ void decompose_path(string full_path, string* dir, file) {
 }
 
 void decompose_path(string full_path, string* dir, file, ext) {
-    string case1 = substr_to_end(full_path, '\\');
-    string case2 = substr_to_end(full_path, '/');
-    string f = trim_start(case1.length < case2.length ? case1 : case2, 1);
-    string e = trim_start(substr_to_end(f, '.'), 1);
+    int64 sep1 = last_index_of(full_path, '\\');
+    int64 sep2 = last_index_of(full_path, '/');
+    int64 sep = sep1 < sep2 ? sep2 : sep1;
+    int64 ext_i = last_index_of(full_path, '.');
+
+    string f = trim_start(full_path, sep as uint32 + 1);
+
+    string e = make_string("");
+    if ext and ext_i != -1 {
+        e = trim_start(full_path, ext_i as uint32);
+    }
 
     if ext   @ext  = e;
-    if file  @file = trim_end(f, e.length + 1);
-    if dir   @dir  = trim_end(full_path, f.length + e.length + 1);
+    if file  @file = trim_end(f, e.length);
+    if dir   @dir  = trim_end(full_path, f.length);
 }
 
